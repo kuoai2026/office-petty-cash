@@ -222,6 +222,8 @@
             <option value="lunch">🍱 午餐費用代墊</option>
             <option value="shipping">📦 廠商運費</option>
             <option value="boss_treat">🎁 老闆請客</option>
+            <option value="reimbursement">🧾 請款</option>
+            <option value="other_expense">📌 其他</option>
           </select>
         </div>
 
@@ -270,6 +272,7 @@
             <option value="lunch_return">🙋 午餐錢代墊返還</option>
             <option value="sales_buy">💼 業代購買商品</option>
             <option value="staff_buy">👤 同仁購買商品</option>
+            <option value="pharmacist_income">💊 郭藥師入帳</option>
             <option value="other_inc">📋 其他</option>
           </select>
         </div>
@@ -395,9 +398,12 @@ const CAT_LABEL = {
   lunch: '🍱 午餐代墊',
   shipping: '📦 廠商運費',
   boss_treat: '🎁 老闆請客',
+  reimbursement: '🧾 請款',
+  other_expense: '📌 其他支出',
   lunch_return: '🙋 午餐返還',
   sales_buy: '💼 業代購買',
   staff_buy: '👤 同仁購買',
+  pharmacist_income: '💊 郭藥師入帳',
   other_inc: '📋 其他收入'
 };
 
@@ -521,7 +527,7 @@ function onExpCat() {
 
 function onIncCat() {
   const v = document.getElementById('inc-cat').value;
-  document.getElementById('sec-inc-person').classList.toggle('hidden', v === 'other_inc');
+  document.getElementById('sec-inc-person').classList.toggle('hidden', v === 'other_inc' || v === 'pharmacist_income');
 }
 
 function buildPersonGrid() {
@@ -664,7 +670,7 @@ function collectTransactionFromForm() {
     tx.category = cat;
     tx.amount = amt;
     tx.note = document.getElementById('inc-note').value.trim();
-    tx.person = cat !== 'other_inc' ? document.getElementById('inc-person').value : '';
+    tx.person = (cat !== 'other_inc' && cat !== 'pharmacist_income') ? document.getElementById('inc-person').value : '';
     tx.lunchDetails = [];
   }
 
