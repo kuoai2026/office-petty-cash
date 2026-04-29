@@ -1,0 +1,1096 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>辦公室零用金記帳</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Helvetica Neue',sans-serif;background:#f2f5f9;color:#2d3748;min-height:100vh;}
+
+  /* ── Header ── */
+  .header{background:#fff;padding:14px 20px;box-shadow:0 1px 4px rgba(0,0,0,.08);display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:100;}
+  .header-title{font-size:18px;font-weight:700;color:#1a202c;letter-spacing:.5px;}
+  .balance-pill{background:#ebf8ff;color:#2b6cb0;padding:7px 15px;border-radius:20px;font-size:13px;font-weight:700;}
+
+  /* ── Nav ── */
+  .nav{background:#fff;display:flex;border-bottom:2px solid #edf2f7;overflow-x:auto;position:sticky;top:53px;z-index:99;}
+  .nav-btn{flex:1;padding:11px 4px;border:none;background:none;cursor:pointer;font-size:12px;color:#a0aec0;white-space:nowrap;border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .2s;min-width:60px;}
+  .nav-btn.active{color:#3182ce;border-bottom-color:#3182ce;font-weight:700;}
+
+  /* ── Content ── */
+  .content{max-width:620px;margin:0 auto;padding:20px 14px 40px;}
+
+  /* ── Card ── */
+  .card{background:#fff;border-radius:14px;padding:20px;margin-bottom:16px;box-shadow:0 1px 4px rgba(0,0,0,.07);}
+  .card-title{font-size:14px;font-weight:700;color:#4a5568;margin-bottom:16px;text-transform:uppercase;letter-spacing:.6px;}
+
+  /* ── Stats ── */
+  .balance-hero{text-align:center;padding:8px 0 20px;}
+  .balance-hero-val{font-size:42px;font-weight:800;color:#2b6cb0;}
+  .balance-hero-label{font-size:13px;color:#a0aec0;margin-top:4px;}
+  .stats-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .stat-box{background:#f7fafc;border-radius:10px;padding:14px;text-align:center;}
+  .stat-val{font-size:20px;font-weight:700;}
+  .c-green{color:#38a169;} .c-red{color:#e53e3e;} .c-blue{color:#3182ce;} .c-purple{color:#805ad5;}
+  .stat-label{font-size:11px;color:#a0aec0;margin-top:3px;}
+
+  /* ── Form ── */
+  .form-group{margin-bottom:14px;}
+  label{display:block;font-size:12px;font-weight:600;color:#718096;margin-bottom:6px;text-transform:uppercase;letter-spacing:.4px;}
+  input[type=text],input[type=number],input[type=date],select,textarea{
+    width:100%;padding:10px 13px;border:1.5px solid #e2e8f0;border-radius:9px;
+    font-size:14px;color:#2d3748;background:#fff;outline:none;transition:border .2s;
+  }
+  input:focus,select:focus,textarea:focus{border-color:#63b3ed;box-shadow:0 0 0 3px rgba(99,179,237,.15);}
+
+  /* ── Buttons ── */
+  .btn{padding:10px 18px;border-radius:9px;border:none;cursor:pointer;font-size:14px;font-weight:600;transition:all .2s;}
+  .btn-primary{background:#3182ce;color:#fff;width:100%;padding:13px;font-size:15px;border-radius:10px;}
+  .btn-primary:hover{background:#2c5282;}
+  .btn-outline{background:#f7fafc;color:#4a5568;border:1.5px solid #e2e8f0;}
+  .btn-outline:hover{background:#edf2f7;}
+  .btn-del{background:#fff5f5;color:#e53e3e;border:1px solid #fed7d7;padding:6px 11px;font-size:12px;border-radius:7px;}
+  .btn-del:hover{background:#fed7d7;}
+
+  /* ── Type toggle ── */
+  .type-toggle{display:flex;gap:8px;margin-bottom:18px;}
+  .type-btn{flex:1;padding:10px;border:1.5px solid #e2e8f0;border-radius:9px;background:#fff;cursor:pointer;text-align:center;font-size:14px;font-weight:500;transition:all .2s;}
+  .type-btn.sel-exp{border-color:#fc8181;background:#fff5f5;color:#c53030;font-weight:700;}
+  .type-btn.sel-inc{border-color:#68d391;background:#f0fff4;color:#276749;font-weight:700;}
+
+  /* ── Person grid ── */
+  .person-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-top:6px;}
+  .p-chip{padding:8px 4px;border:1.5px solid #e2e8f0;border-radius:8px;text-align:center;cursor:pointer;font-size:13px;color:#4a5568;transition:all .18s;user-select:none;}
+  .p-chip:hover{border-color:#90cdf4;background:#ebf8ff;}
+  .p-chip.sel{border-color:#3182ce;background:#ebf8ff;color:#2b6cb0;font-weight:700;}
+
+  /* ── Lunch amount inputs ── */
+  .lunch-detail-box{background:#f7fafc;border-radius:10px;padding:14px;margin-top:10px;}
+  .lunch-row{display:flex;align-items:center;gap:10px;margin-bottom:9px;}
+  .lunch-name{min-width:58px;font-size:13px;font-weight:600;color:#4a5568;}
+  .lunch-input-field{flex:1;}
+
+  /* ── Balance bar ── */
+  .balance-bar{border-radius:9px;padding:12px 14px;margin-top:12px;display:flex;justify-content:space-between;align-items:center;font-size:13px;transition:background .3s;}
+  .balance-bar.ok{background:#f0fff4;border:1.5px solid #9ae6b4;}
+  .balance-bar.ng{background:#fff5f5;border:1.5px solid #feb2b2;}
+  .balance-bar.idle{background:#f7fafc;border:1.5px solid #e2e8f0;}
+  .bal-label{font-weight:600;}
+  .bal-diff{font-size:16px;font-weight:800;}
+  .bal-diff.ok{color:#276749;} .bal-diff.ng{color:#c53030;} .bal-diff.idle{color:#a0aec0;}
+
+  /* ── Big debt button ── */
+  .mega-btn{width:100%;padding:20px;border:none;border-radius:14px;cursor:pointer;font-size:18px;font-weight:700;color:#fff;
+    background:linear-gradient(135deg,#667eea,#764ba2);
+    box-shadow:0 5px 18px rgba(102,126,234,.4);transition:transform .2s,box-shadow .2s;}
+  .mega-btn:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(102,126,234,.5);}
+
+  /* ── Debt cards ── */
+  .debt-summary{background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;border-radius:14px;padding:20px;text-align:center;margin-bottom:14px;}
+  .debt-summary-val{font-size:36px;font-weight:800;}
+  .debt-summary-label{font-size:13px;opacity:.8;margin-top:4px;}
+  .debt-card{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-radius:10px;margin-bottom:8px;border-left:4px solid transparent;}
+  .debt-card.owes{border-left-color:#e53e3e;background:#fff5f5;}
+  .debt-card.clear{border-left-color:#38a169;background:#f0fff4;}
+  .debt-card.zero{border-left-color:#e2e8f0;background:#f7fafc;}
+  .debt-person-name{font-size:15px;font-weight:700;}
+  .debt-sub{font-size:11px;color:#a0aec0;margin-top:3px;}
+  .debt-amt{font-size:18px;font-weight:800;}
+  .debt-amt.owes{color:#e53e3e;}
+  .debt-amt.clear{color:#38a169;font-size:15px;}
+
+  /* ── History ── */
+  .filter-bar{display:flex;gap:7px;margin-bottom:14px;overflow-x:auto;padding-bottom:2px;}
+  .f-chip{padding:6px 14px;border-radius:20px;border:1.5px solid #e2e8f0;background:#fff;cursor:pointer;font-size:12px;white-space:nowrap;font-weight:500;transition:all .2s;}
+  .f-chip.active{background:#3182ce;color:#fff;border-color:#3182ce;}
+  .tx-row{padding:13px 0;border-bottom:1px solid #f0f0f0;display:flex;justify-content:space-between;align-items:flex-start;}
+  .tx-row:last-child{border-bottom:none;}
+  .tx-badge{display:inline-block;padding:3px 8px;border-radius:5px;font-size:11px;font-weight:600;}
+  .badge-exp{background:#fff5f5;color:#c53030;}
+  .badge-inc{background:#f0fff4;color:#276749;}
+  .tx-date{font-size:11px;color:#a0aec0;margin-left:6px;}
+  .tx-detail{font-size:12px;color:#718096;margin-top:4px;line-height:1.5;}
+  .tx-amt{font-size:16px;font-weight:700;}
+
+  /* ── Modal ── */
+  .overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:999;}
+  .modal{background:#fff;border-radius:16px;padding:24px;max-width:340px;width:90%;}
+  .modal-title{font-size:17px;font-weight:700;margin-bottom:8px;}
+  .modal-msg{font-size:13px;color:#718096;margin-bottom:20px;line-height:1.5;}
+  .modal-btns{display:flex;gap:8px;}
+
+  .hidden{display:none!important;}
+  .empty{text-align:center;padding:36px 20px;color:#cbd5e0;}
+  .empty-icon{font-size:44px;margin-bottom:10px;}
+
+  /* ── Divider ── */
+  .divider{border:none;border-top:1px solid #edf2f7;margin:14px 0;}
+
+  /* Settings */
+  .danger-zone{border:1.5px solid #fed7d7;border-radius:10px;padding:16px;}
+  .danger-title{font-size:13px;font-weight:700;color:#c53030;margin-bottom:8px;}
+  .checkbox-row{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:9px;background:#f7fafc;}
+  .checkbox-row input[type=checkbox]{width:18px;height:18px;accent-color:#3182ce;flex-shrink:0;}
+  .checkbox-row span{font-size:14px;color:#2d3748;font-weight:600;}
+  .inline-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px;}
+  .btn-secondary{background:#ebf8ff;color:#2b6cb0;border:1.5px solid #bee3f8;}
+  .btn-secondary:hover{background:#bee3f8;}
+  .sync-panel{background:#f7fafc;border-radius:10px;padding:14px;margin-top:12px;}
+  .sync-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px;}
+  .sync-stat{background:#fff;border-radius:10px;padding:12px;text-align:center;border:1px solid #edf2f7;}
+  .sync-stat-val{font-size:22px;font-weight:800;color:#2d3748;}
+  .sync-stat-label{font-size:11px;color:#718096;margin-top:4px;}
+  .sync-hint{font-size:12px;color:#718096;line-height:1.6;}
+  .sync-status-text{font-size:12px;color:#4a5568;margin-top:8px;line-height:1.5;}
+  .sync-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;vertical-align:middle;}
+  .sync-dot.synced{background:#38a169;}
+  .sync-dot.pending,.sync-dot.syncing{background:#d69e2e;}
+  .sync-dot.failed{background:#e53e3e;}
+  .tx-sync{font-size:11px;margin-top:6px;}
+  .tx-sync-pill{display:inline-flex;align-items:center;padding:2px 8px;border-radius:999px;font-weight:700;}
+  .tx-sync-pill.synced{background:#f0fff4;color:#276749;}
+  .tx-sync-pill.pending,.tx-sync-pill.syncing{background:#fffaf0;color:#b7791f;}
+  .tx-sync-pill.failed{background:#fff5f5;color:#c53030;}
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="header-title">🏢 辦公室零用金</div>
+  <div class="balance-pill" id="hBalance">餘額 $1,000</div>
+</header>
+
+<nav class="nav">
+  <button class="nav-btn active" onclick="tab('overview')">📊 總覽</button>
+  <button class="nav-btn" onclick="tab('add')">➕ 新增</button>
+  <button class="nav-btn" onclick="tab('debt')">👥 欠款</button>
+  <button class="nav-btn" onclick="tab('history')">📋 記錄</button>
+  <button class="nav-btn" onclick="tab('settings')">⚙️ 設定</button>
+</nav>
+
+<div class="content">
+
+  <!-- ═══ 總覽 ═══ -->
+  <div id="tab-overview">
+    <div class="card">
+      <div class="balance-hero">
+        <div class="balance-hero-val" id="mainBal">$1,000</div>
+        <div class="balance-hero-label">目前零用金餘額</div>
+      </div>
+      <div class="stats-row">
+        <div class="stat-box"><div class="stat-val c-green" id="s-income">$0</div><div class="stat-label">累計收入</div></div>
+        <div class="stat-box"><div class="stat-val c-red" id="s-expense">$0</div><div class="stat-label">累計支出</div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">待收欠款</div>
+      <div style="text-align:center;margin-bottom:14px;">
+        <div class="stat-val c-red" style="font-size:30px;" id="s-owing">$0</div>
+        <div style="font-size:12px;color:#a0aec0;margin-top:4px;">同仁尚未繳納午餐費</div>
+      </div>
+      <button class="mega-btn" onclick="tab('debt')">👥 查看個人欠款明細 →</button>
+    </div>
+
+    <div class="card">
+      <div class="card-title">最近記錄</div>
+      <div id="recent-list"><div class="empty"><div class="empty-icon">📝</div>還沒有任何記錄</div></div>
+    </div>
+  </div>
+
+  <!-- ═══ 新增 ═══ -->
+  <div id="tab-add" class="hidden">
+    <div class="card">
+      <div class="card-title">新增記錄</div>
+
+      <div class="type-toggle">
+        <button class="type-btn sel-exp" id="btn-exp" onclick="setType('expense')">💸 支出</button>
+        <button class="type-btn" id="btn-inc" onclick="setType('income')">💰 收入</button>
+      </div>
+
+      <div class="form-group">
+        <label>日期</label>
+        <input type="date" id="f-date">
+      </div>
+
+      <!-- 支出區 -->
+      <div id="sec-expense">
+        <div class="form-group">
+          <label>支出類型</label>
+          <select id="exp-cat" onchange="onExpCat()">
+            <option value="lunch">🍱 午餐費用代墊</option>
+            <option value="shipping">📦 廠商運費</option>
+            <option value="boss_treat">🎁 老闆請客</option>
+          </select>
+        </div>
+
+        <!-- 午餐區 -->
+        <div id="sec-lunch">
+          <div class="form-group">
+            <label>本餐總金額（零用金代墊總計）</label>
+            <input type="number" id="lunch-grand-total" placeholder="請先輸入本餐總金額" min="0" oninput="calcLunchTotal()">
+          </div>
+          <div class="form-group">
+            <label>選擇用餐人員（可複選）</label>
+            <div class="person-grid" id="person-grid"></div>
+          </div>
+          <div id="sec-lunch-amt" class="hidden">
+            <div class="lunch-detail-box">
+              <label style="margin-bottom:10px;display:block;">各人餐費金額</label>
+              <div id="lunch-inputs"></div>
+            </div>
+            <!-- 餘額狀態列 -->
+            <div class="balance-bar idle" id="balance-bar">
+              <span class="bal-label" id="bal-label">已分配 $0 ／ 總計 $0</span>
+              <span class="bal-diff idle" id="bal-diff">待填寫</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 其他支出金額 -->
+        <div id="sec-other-exp" class="hidden">
+          <div class="form-group">
+            <label>金額</label>
+            <input type="number" id="other-exp-amt" placeholder="請輸入金額" min="0">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>備註（選填）</label>
+          <input type="text" id="exp-note" placeholder="備註...">
+        </div>
+      </div>
+
+      <!-- 收入區 -->
+      <div id="sec-income" class="hidden">
+        <div class="form-group">
+          <label>收入類型</label>
+          <select id="inc-cat" onchange="onIncCat()">
+            <option value="lunch_return">🙋 午餐錢代墊返還</option>
+            <option value="sales_buy">💼 業代購買商品</option>
+            <option value="staff_buy">👤 同仁購買商品</option>
+            <option value="other_inc">📋 其他</option>
+          </select>
+        </div>
+        <div id="sec-inc-person">
+          <div class="form-group">
+            <label>人員</label>
+            <select id="inc-person"></select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>金額</label>
+          <input type="number" id="inc-amt" placeholder="請輸入金額" min="0">
+        </div>
+        <div class="form-group">
+          <label>備註（選填）</label>
+          <input type="text" id="inc-note" placeholder="備註...">
+        </div>
+      </div>
+
+      <button class="btn btn-primary" onclick="submit()">✅ 新增記錄</button>
+    </div>
+  </div>
+
+  <!-- ═══ 欠款 ═══ -->
+  <div id="tab-debt" class="hidden">
+    <button class="mega-btn" style="margin-bottom:18px;" onclick="renderDebt()">
+      🔍 立即計算所有欠款
+    </button>
+    <div id="debt-results"></div>
+  </div>
+
+  <!-- ═══ 記錄 ═══ -->
+  <div id="tab-history" class="hidden">
+    <div class="card">
+      <div class="filter-bar">
+        <button class="f-chip active" onclick="setFilter('all',this)">全部</button>
+        <button class="f-chip" onclick="setFilter('expense',this)">支出</button>
+        <button class="f-chip" onclick="setFilter('income',this)">收入</button>
+        <button class="f-chip" onclick="setFilter('lunch',this)">午餐</button>
+        <button class="f-chip" onclick="setFilter('lunch_return',this)">繳款</button>
+      </div>
+      <div id="history-list"></div>
+    </div>
+  </div>
+
+  <!-- ═══ 設定 ═══ -->
+  <div id="tab-settings" class="hidden">
+    <div class="card">
+      <div class="card-title">💰 基本設定</div>
+      <div class="form-group">
+        <label>初始金額（$）</label>
+        <input type="number" id="init-bal" min="0">
+      </div>
+      <p style="font-size:12px;color:#a0aec0;margin-bottom:14px;">此金額為零用金的起始本金，修改後餘額會重新計算。</p>
+
+      <hr class="divider">
+
+      <div class="card-title" style="margin-bottom:12px;">☁️ Google Sheet 備份</div>
+      <div class="form-group">
+        <label>Google Apps Script Web App URL</label>
+        <input type="text" id="sheet-url" placeholder="請貼上部署後的 Web App URL">
+      </div>
+      <div class="form-group">
+        <label>自動同步</label>
+        <label class="checkbox-row">
+          <input type="checkbox" id="auto-sync-enabled">
+          <span>新增記錄後自動備份到 Google Sheet</span>
+        </label>
+      </div>
+      <div class="inline-actions">
+        <button class="btn btn-secondary" onclick="testSyncConnection()">測試連線</button>
+        <button class="btn btn-secondary" onclick="retryUnsyncedTransactions()">補同步未完成資料</button>
+      </div>
+      <div class="sync-panel">
+        <div class="sync-hint">建議做法：本機 `localStorage` 照常當主要資料來源，Google Sheet 僅作為雲端備份。這樣就算瀏覽器資料遺失，仍可從表單備份找回記錄。</div>
+        <div class="sync-status-text" id="sync-status-text">尚未設定 Google Sheet 備份。</div>
+        <div class="sync-stats">
+          <div class="sync-stat">
+            <div class="sync-stat-val" id="sync-count-synced">0</div>
+            <div class="sync-stat-label">已同步</div>
+          </div>
+          <div class="sync-stat">
+            <div class="sync-stat-val" id="sync-count-pending">0</div>
+            <div class="sync-stat-label">待同步</div>
+          </div>
+          <div class="sync-stat">
+            <div class="sync-stat-val" id="sync-count-failed">0</div>
+            <div class="sync-stat-label">失敗</div>
+          </div>
+        </div>
+      </div>
+
+      <button class="btn btn-primary" onclick="saveSettings()">儲存設定</button>
+    </div>
+
+    <div class="card">
+      <div class="danger-zone">
+        <div class="danger-title">⚠️ 危險操作</div>
+        <p style="font-size:13px;color:#718096;margin-bottom:14px;">清除所有記錄，此操作<strong>無法復原</strong>，請謹慎操作。</p>
+        <button class="btn btn-del" style="font-size:13px;padding:8px 16px;" onclick="confirmClear()">清除所有資料</button>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /content -->
+
+<!-- ═══ Modal ═══ -->
+<div class="overlay hidden" id="modal">
+  <div class="modal">
+    <div class="modal-title" id="modal-title"></div>
+    <div class="modal-msg" id="modal-msg"></div>
+    <div class="modal-btns">
+      <button class="btn btn-outline" style="flex:1;" onclick="closeModal()">取消</button>
+      <button class="btn btn-del" style="flex:1;font-size:14px;padding:10px;" id="modal-ok">確認</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const PERSONS = ['琪琪','嘟姐','Wendy','姿閔','羿寧','弈妏','怡臻','老闆','阿姨','業代','臨時人員','其他'];
+
+const CAT_LABEL = {
+  lunch:        '🍱 午餐代墊',
+  shipping:     '📦 廠商運費',
+  boss_treat:   '🎁 老闆請客',
+  lunch_return: '🙋 午餐返還',
+  sales_buy:    '💼 業代購買',
+  staff_buy:    '👤 同仁購買',
+  other_inc:    '📋 其他收入'
+};
+
+const DEFAULT_SETTINGS = {
+  initialBalance: 1000,
+  sheetUrl: 'https://script.google.com/macros/s/AKfycbwBfEQORspQLwxu2A6Nwp3AiBEwwsKsVjGX_kZVDswv1tZWDfq6O0k3N5crLGtgja4m/exec',
+  autoSyncEnabled: true
+};
+
+let settings     = normalizeSettings(JSON.parse(localStorage.getItem('pf_settings') || 'null'));
+let transactions = normalizeTransactions(JSON.parse(localStorage.getItem('pf_txs') || '[]'));
+let currentType  = 'expense';
+let selectedPax  = new Set();
+let histFilter   = 'all';
+let modalCb      = null;
+let syncSeq      = 0;
+
+function normalizeSettings(raw){
+  return {
+    ...DEFAULT_SETTINGS,
+    ...(raw && typeof raw === 'object' ? raw : {})
+  };
+}
+
+function normalizeTransactions(raw){
+  if(!Array.isArray(raw)) return [];
+  return raw.map(tx=>normalizeTransaction(tx)).filter(Boolean);
+}
+
+function normalizeTransaction(tx){
+  if(!tx || typeof tx !== 'object') return null;
+  const id = String(tx.id || createTxId());
+  const syncStatus = ['pending','syncing','synced','failed'].includes(tx.syncStatus) ? tx.syncStatus : 'pending';
+  return {
+    ...tx,
+    id,
+    amount: Number(tx.amount || 0),
+    createdAt: tx.createdAt || new Date().toISOString(),
+    syncStatus,
+    syncError: tx.syncError || '',
+    syncedAt: tx.syncedAt || '',
+    lunchDetails: Array.isArray(tx.lunchDetails) ? tx.lunchDetails : []
+  };
+}
+
+function createTxId(){
+  return `${Date.now()}-${Math.random().toString(36).slice(2,8)}`;
+}
+
+function today(){
+  return new Date().toLocaleDateString('sv-SE');
+}
+
+function init(){
+  document.getElementById('f-date').value = today();
+  hydrateSettingsForm();
+  buildPersonGrid();
+
+  const sel = document.getElementById('inc-person');
+  PERSONS.forEach(p=>{
+    const o = document.createElement('option');
+    o.value = o.textContent = p;
+    sel.appendChild(o);
+  });
+
+  renderAll();
+}
+
+function hydrateSettingsForm(){
+  document.getElementById('init-bal').value = settings.initialBalance;
+  document.getElementById('sheet-url').value = settings.sheetUrl || '';
+  document.getElementById('auto-sync-enabled').checked = !!settings.autoSyncEnabled;
+}
+
+function renderAll(){
+  renderOverview();
+  renderDebt();
+  renderHistory();
+  renderSyncSummary();
+  updateHeader();
+}
+
+const TABS = ['overview','add','debt','history','settings'];
+
+function tab(t){
+  TABS.forEach(id=>{
+    document.getElementById('tab-'+id).classList.toggle('hidden', id!==t);
+  });
+  document.querySelectorAll('.nav-btn').forEach((b,i)=>{
+    b.classList.toggle('active', TABS[i]===t);
+  });
+  if(t==='debt') renderDebt();
+  if(t==='history') renderHistory();
+  if(t==='overview') renderOverview();
+  if(t==='settings') renderSyncSummary();
+}
+
+function setType(t){
+  currentType = t;
+  document.getElementById('btn-exp').className = 'type-btn' + (t==='expense' ? ' sel-exp' : '');
+  document.getElementById('btn-inc').className = 'type-btn' + (t==='income' ? ' sel-inc' : '');
+  document.getElementById('sec-expense').classList.toggle('hidden', t!=='expense');
+  document.getElementById('sec-income').classList.toggle('hidden', t!=='income');
+}
+
+function onExpCat(){
+  const v = document.getElementById('exp-cat').value;
+  document.getElementById('sec-lunch').classList.toggle('hidden', v!=='lunch');
+  document.getElementById('sec-other-exp').classList.toggle('hidden', v==='lunch');
+}
+
+function onIncCat(){
+  const v = document.getElementById('inc-cat').value;
+  document.getElementById('sec-inc-person').classList.toggle('hidden', v==='other_inc');
+}
+
+function buildPersonGrid(){
+  const grid = document.getElementById('person-grid');
+  grid.innerHTML = '';
+  PERSONS.forEach(p=>{
+    const d = document.createElement('div');
+    d.className = 'p-chip' + (selectedPax.has(p) ? ' sel' : '');
+    d.textContent = p;
+    d.onclick = ()=> togglePax(p, d);
+    grid.appendChild(d);
+  });
+}
+
+function togglePax(p, el){
+  if(selectedPax.has(p)){
+    selectedPax.delete(p);
+    el.classList.remove('sel');
+  } else {
+    selectedPax.add(p);
+    el.classList.add('sel');
+  }
+  buildLunchInputs();
+}
+
+function buildLunchInputs(){
+  const sec = document.getElementById('sec-lunch-amt');
+  const box = document.getElementById('lunch-inputs');
+  if(selectedPax.size===0){
+    sec.classList.add('hidden');
+    return;
+  }
+  sec.classList.remove('hidden');
+
+  const vals = {};
+  box.querySelectorAll('.li').forEach(inp=>{ vals[inp.dataset.p] = inp.value; });
+
+  box.innerHTML = '';
+  selectedPax.forEach(p=>{
+    const row = document.createElement('div');
+    row.className = 'lunch-row';
+    row.innerHTML = `
+      <span class="lunch-name">${p}</span>
+      <input type="number" class="li lunch-input-field" data-p="${p}"
+             placeholder="$0" min="0" value="${vals[p] || ''}" oninput="calcLunchTotal()">`;
+    box.appendChild(row);
+  });
+  calcLunchTotal();
+}
+
+function calcLunchTotal(){
+  let allocated = 0;
+  document.querySelectorAll('.li').forEach(i=>{ allocated += parseFloat(i.value) || 0; });
+  const grand = parseFloat(document.getElementById('lunch-grand-total').value) || 0;
+  const diff = grand - allocated;
+  const bar = document.getElementById('balance-bar');
+  const label = document.getElementById('bal-label');
+  const diffEl = document.getElementById('bal-diff');
+
+  label.textContent = `已分配 $${Math.round(allocated).toLocaleString()} ／ 總計 $${Math.round(grand).toLocaleString()}`;
+
+  if(grand===0){
+    bar.className = 'balance-bar idle';
+    diffEl.className = 'bal-diff idle';
+    diffEl.textContent = '請先填總金額';
+  } else if(Math.abs(diff)<0.01){
+    bar.className = 'balance-bar ok';
+    diffEl.className = 'bal-diff ok';
+    diffEl.textContent = '✓ 金額吻合';
+  } else if(diff>0){
+    bar.className = 'balance-bar ng';
+    diffEl.className = 'bal-diff ng';
+    diffEl.textContent = `還差 $${Math.round(diff).toLocaleString()}`;
+  } else {
+    bar.className = 'balance-bar ng';
+    diffEl.className = 'bal-diff ng';
+    diffEl.textContent = `超出 $${Math.round(-diff).toLocaleString()}`;
+  }
+}
+
+async function submit(){
+  const date = document.getElementById('f-date').value;
+  if(!date){
+    alert('請選擇日期');
+    return;
+  }
+
+  const nowIso = new Date().toISOString();
+  const tx = {
+    id: createTxId(),
+    date,
+    createdAt: nowIso,
+    syncStatus: shouldAutoSync() ? 'pending' : 'pending',
+    syncError: '',
+    syncedAt: ''
+  };
+
+  if(currentType==='expense'){
+    const cat = document.getElementById('exp-cat').value;
+    tx.type = 'expense';
+    tx.category = cat;
+    tx.note = document.getElementById('exp-note').value.trim();
+
+    if(cat==='lunch'){
+      const grand = parseFloat(document.getElementById('lunch-grand-total').value);
+      if(!grand || grand<=0){
+        alert('請填入本餐總金額');
+        return;
+      }
+      if(selectedPax.size===0){
+        alert('請選擇用餐人員');
+        return;
+      }
+      const details = [];
+      let allocated = 0;
+      let ok = true;
+      document.querySelectorAll('.li').forEach(inp=>{
+        const amt = parseFloat(inp.value);
+        if(!amt || amt<=0){
+          ok = false;
+          return;
+        }
+        details.push({ person: inp.dataset.p, amount: amt });
+        allocated += amt;
+      });
+      if(!ok || details.length===0){
+        alert('請填入每位用餐人員的金額（需大於 0）');
+        return;
+      }
+      if(Math.abs(allocated-grand)>=1){
+        const diff = grand - allocated;
+        alert(diff>0
+          ? `各人金額加總（$${Math.round(allocated)}）還差 $${Math.round(diff)}，需等於本餐總金額 $${Math.round(grand)}`
+          : `各人金額加總（$${Math.round(allocated)}）超出 $${Math.round(-diff)}，需等於本餐總金額 $${Math.round(grand)}`);
+        return;
+      }
+      tx.lunchDetails = details;
+      tx.amount = grand;
+    } else {
+      const amt = parseFloat(document.getElementById('other-exp-amt').value);
+      if(!amt || amt<=0){
+        alert('請填入有效金額');
+        return;
+      }
+      tx.amount = amt;
+      tx.lunchDetails = [];
+    }
+  } else {
+    const cat = document.getElementById('inc-cat').value;
+    const amt = parseFloat(document.getElementById('inc-amt').value);
+    if(!amt || amt<=0){
+      alert('請填入有效金額');
+      return;
+    }
+    tx.type = 'income';
+    tx.category = cat;
+    tx.amount = amt;
+    tx.note = document.getElementById('inc-note').value.trim();
+    tx.person = cat!=='other_inc' ? document.getElementById('inc-person').value : '';
+    tx.lunchDetails = [];
+  }
+
+  transactions.unshift(tx);
+  save();
+  resetForm();
+  renderAll();
+
+  if(shouldAutoSync()){
+    syncTransactionById(tx.id, { silent: true });
+    alert('✅ 已新增，系統會同步備份到 Google Sheet。');
+  } else {
+    alert('✅ 已新增！目前僅儲存在本機，如要雲端備份請先到設定頁完成 Google Sheet 連線。');
+  }
+}
+
+function resetForm(){
+  selectedPax.clear();
+  buildPersonGrid();
+  document.getElementById('sec-lunch-amt').classList.add('hidden');
+  document.getElementById('lunch-inputs').innerHTML = '';
+  document.getElementById('lunch-grand-total').value = '';
+  document.getElementById('balance-bar').className = 'balance-bar idle';
+  document.getElementById('bal-label').textContent = '已分配 $0 ／ 總計 $0';
+  document.getElementById('bal-diff').className = 'bal-diff idle';
+  document.getElementById('bal-diff').textContent = '待填寫';
+  document.getElementById('exp-note').value = '';
+  document.getElementById('inc-amt').value = '';
+  document.getElementById('inc-note').value = '';
+  document.getElementById('other-exp-amt').value = '';
+  document.getElementById('exp-cat').value = 'lunch';
+  document.getElementById('inc-cat').value = 'lunch_return';
+  document.getElementById('f-date').value = today();
+  onExpCat();
+  onIncCat();
+}
+
+function calcBalance(){
+  let bal = settings.initialBalance;
+  transactions.forEach(t=>{ bal += t.type==='income' ? t.amount : -t.amount; });
+  return bal;
+}
+
+function calcPersonDebts(){
+  const d = {};
+  PERSONS.forEach(p=>{ d[p] = { owed: 0, paid: 0 }; });
+  transactions.forEach(tx=>{
+    if(tx.type==='expense' && tx.category==='lunch' && tx.lunchDetails){
+      tx.lunchDetails.forEach(ld=>{
+        if(d[ld.person]) d[ld.person].owed += ld.amount;
+      });
+    }
+    if(tx.type==='income' && tx.category==='lunch_return' && tx.person){
+      if(d[tx.person]) d[tx.person].paid += tx.amount;
+    }
+  });
+  return d;
+}
+
+function totalOwing(){
+  const d = calcPersonDebts();
+  return Object.values(d).reduce((s,v)=>{
+    const o = v.owed - v.paid;
+    return s + (o>0 ? o : 0);
+  },0);
+}
+
+function updateHeader(){
+  const b = calcBalance();
+  document.getElementById('hBalance').textContent = '餘額 $' + Math.round(b).toLocaleString();
+}
+
+function renderOverview(){
+  const bal = calcBalance();
+  const inc = transactions.filter(t=>t.type==='income').reduce((s,t)=>s+t.amount,0);
+  const exp = transactions.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0);
+  const ow = totalOwing();
+
+  document.getElementById('mainBal').textContent = '$' + Math.round(bal).toLocaleString();
+  document.getElementById('s-income').textContent = '$' + Math.round(inc).toLocaleString();
+  document.getElementById('s-expense').textContent = '$' + Math.round(exp).toLocaleString();
+  document.getElementById('s-owing').textContent = '$' + Math.round(ow).toLocaleString();
+  updateHeader();
+
+  const recent = transactions.slice(0,5);
+  const el = document.getElementById('recent-list');
+  el.innerHTML = recent.length===0
+    ? '<div class="empty"><div class="empty-icon">📝</div>還沒有任何記錄</div>'
+    : recent.map(t=>txRow(t,false)).join('');
+}
+
+function renderDebt(){
+  const debts = calcPersonDebts();
+  const el = document.getElementById('debt-results');
+
+  const list = Object.entries(debts)
+    .map(([p,d])=>({ person:p, owed:d.owed, paid:d.paid, out:d.owed-d.paid }))
+    .filter(e=>e.owed>0)
+    .sort((a,b)=>b.out-a.out);
+
+  if(list.length===0){
+    el.innerHTML = '<div class="card"><div class="empty"><div class="empty-icon">🎉</div>目前沒有午餐欠款記錄</div></div>';
+    return;
+  }
+
+  const total = list.reduce((s,e)=>s+(e.out>0?e.out:0),0);
+
+  el.innerHTML = `
+    <div class="debt-summary">
+      <div class="debt-summary-label">所有同仁尚欠總計</div>
+      <div class="debt-summary-val">$${Math.round(total).toLocaleString()}</div>
+    </div>
+  ` + list.map(e=>{
+    const hasDebt = e.out > 0;
+    const cls = hasDebt ? 'owes' : 'clear';
+    const amtT = hasDebt
+      ? `<div class="debt-amt owes">尚欠 $${Math.round(e.out).toLocaleString()}</div>`
+      : `<div class="debt-amt clear">✓ 已結清</div>`;
+    return `<div class="debt-card ${cls}">
+      <div>
+        <div class="debt-person-name">${e.person}</div>
+        <div class="debt-sub">累計 $${Math.round(e.owed)} ／ 已繳 $${Math.round(e.paid)}</div>
+      </div>
+      ${amtT}
+    </div>`;
+  }).join('');
+}
+
+function renderHistory(){
+  const el = document.getElementById('history-list');
+  let list = transactions;
+  if(histFilter==='expense') list = transactions.filter(t=>t.type==='expense');
+  else if(histFilter==='income') list = transactions.filter(t=>t.type==='income');
+  else if(histFilter==='lunch') list = transactions.filter(t=>t.category==='lunch');
+  else if(histFilter==='lunch_return') list = transactions.filter(t=>t.category==='lunch_return');
+
+  el.innerHTML = list.length===0
+    ? '<div class="empty"><div class="empty-icon">📋</div>沒有符合的記錄</div>'
+    : list.map(t=>txRow(t,true)).join('');
+}
+
+function getSyncLabel(status){
+  if(status==='synced') return '已備份';
+  if(status==='syncing') return '同步中';
+  if(status==='failed') return '同步失敗';
+  return '待同步';
+}
+
+function txRow(tx, showDel){
+  const isExp = tx.type==='expense';
+  const sign = isExp ? '-' : '+';
+  const color = isExp ? '#e53e3e' : '#38a169';
+  const badge = isExp ? 'badge-exp' : 'badge-inc';
+  const label = CAT_LABEL[tx.category] || tx.category;
+
+  let detail = '';
+  if(tx.category==='lunch' && tx.lunchDetails){
+    detail = tx.lunchDetails.map(d=>`<span>${d.person} $${Math.round(d.amount)}</span>`).join(' &nbsp;·&nbsp; ');
+  } else if(tx.person){
+    detail = tx.person;
+  }
+  if(tx.note) detail += (detail ? ' ｜ ' : '') + tx.note;
+
+  const syncStatus = tx.syncStatus || 'pending';
+  const syncError = syncStatus==='failed' && tx.syncError ? ` ｜ ${tx.syncError}` : '';
+
+  return `<div class="tx-row">
+    <div style="flex:1;min-width:0;">
+      <div style="display:flex;align-items:center;flex-wrap:wrap;gap:4px;">
+        <span class="tx-badge ${badge}">${label}</span>
+        <span class="tx-date">${tx.date}</span>
+      </div>
+      ${detail ? `<div class="tx-detail">${detail}</div>` : ''}
+      <div class="tx-sync"><span class="tx-sync-pill ${syncStatus}">${getSyncLabel(syncStatus)}</span>${syncError}</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;margin-left:10px;flex-shrink:0;">
+      <span class="tx-amt" style="color:${color}">${sign}$${Math.round(tx.amount).toLocaleString()}</span>
+      ${showDel ? `<button class="btn-del" onclick="delTx('${tx.id}')">刪除</button>` : ''}
+    </div>
+  </div>`;
+}
+
+function setFilter(f, btn){
+  histFilter = f;
+  document.querySelectorAll('.f-chip').forEach(c=>c.classList.remove('active'));
+  btn.classList.add('active');
+  renderHistory();
+}
+
+function delTx(id){
+  showModal('確認刪除？','此筆記錄將被永久刪除，無法復原。',()=>{
+    transactions = transactions.filter(t=>t.id!==id);
+    save();
+    renderAll();
+  });
+}
+
+function saveSettings(){
+  const v = parseFloat(document.getElementById('init-bal').value);
+  if(isNaN(v) || v<0){
+    alert('請輸入有效金額');
+    return;
+  }
+
+  settings.initialBalance = v;
+  settings.sheetUrl = document.getElementById('sheet-url').value.trim();
+  settings.autoSyncEnabled = document.getElementById('auto-sync-enabled').checked;
+  localStorage.setItem('pf_settings', JSON.stringify(settings));
+  renderAll();
+  alert('✅ 設定已儲存！');
+}
+
+function confirmClear(){
+  showModal('清除所有資料？','所有交易記錄將被永久刪除，此操作無法復原！',()=>{
+    transactions = [];
+    save();
+    renderAll();
+    alert('已清除所有資料。Google Sheet 備份資料若也要清空，請另外到試算表處理。');
+  });
+}
+
+function save(){
+  localStorage.setItem('pf_txs', JSON.stringify(transactions));
+}
+
+function shouldAutoSync(){
+  return !!(settings.autoSyncEnabled && settings.sheetUrl);
+}
+
+function getUnsyncedTransactions(){
+  return transactions.filter(tx=>tx.syncStatus!=='synced');
+}
+
+function renderSyncSummary(){
+  const synced = transactions.filter(tx=>tx.syncStatus==='synced').length;
+  const pending = transactions.filter(tx=>tx.syncStatus==='pending' || tx.syncStatus==='syncing').length;
+  const failed = transactions.filter(tx=>tx.syncStatus==='failed').length;
+
+  document.getElementById('sync-count-synced').textContent = synced;
+  document.getElementById('sync-count-pending').textContent = pending;
+  document.getElementById('sync-count-failed').textContent = failed;
+
+  const statusEl = document.getElementById('sync-status-text');
+  if(!settings.sheetUrl){
+    statusEl.textContent = '尚未設定 Google Sheet 備份。請先部署 Apps Script，並把 Web App URL 貼到這裡。';
+    return;
+  }
+
+  const syncMode = settings.autoSyncEnabled ? '已啟用自動同步' : '目前未啟用自動同步';
+  statusEl.innerHTML = `
+    <span class="sync-dot ${failed>0 ? 'failed' : pending>0 ? 'pending' : 'synced'}"></span>
+    ${syncMode}，未同步 ${pending + failed} 筆。
+  `;
+}
+
+function updateTransactionSyncState(id, patch){
+  const tx = transactions.find(item=>item.id===id);
+  if(!tx) return null;
+  Object.assign(tx, patch);
+  save();
+  renderAll();
+  return tx;
+}
+
+function buildSyncPayload(tx){
+  return {
+    id: tx.id,
+    date: tx.date,
+    type: tx.type,
+    category: tx.category,
+    amount: tx.amount,
+    note: tx.note || '',
+    person: tx.person || '',
+    lunchDetails: tx.lunchDetails || [],
+    createdAt: tx.createdAt || '',
+    syncStatus: tx.syncStatus || 'pending',
+    syncedAt: tx.syncedAt || ''
+  };
+}
+
+function getSheetUrl(){
+  const input = document.getElementById('sheet-url');
+  const liveValue = input ? input.value.trim() : '';
+  return liveValue || (settings.sheetUrl || '').trim();
+}
+
+function callSheetApi(action, payload){
+  const baseUrl = getSheetUrl();
+  if(!baseUrl){
+    return Promise.reject(new Error('請先設定 Google Apps Script Web App URL'));
+  }
+
+  const callbackName = `__sheetSyncCallback_${Date.now()}_${++syncSeq}`;
+  return new Promise((resolve, reject)=>{
+    const script = document.createElement('script');
+    const timeoutId = setTimeout(()=>{
+      cleanup();
+      reject(new Error('連線逾時，請確認 Apps Script 已正確部署且網址可公開存取'));
+    }, 15000);
+
+    function cleanup(){
+      clearTimeout(timeoutId);
+      delete window[callbackName];
+      script.remove();
+    }
+
+    window[callbackName] = (result)=>{
+      cleanup();
+      if(result && result.ok){
+        resolve(result);
+      } else {
+        reject(new Error(result && result.message ? result.message : '同步失敗'));
+      }
+    };
+
+    script.onerror = ()=>{
+      cleanup();
+      reject(new Error('無法載入 Apps Script，請檢查網址與部署權限'));
+    };
+
+    const url = new URL(baseUrl);
+    url.searchParams.set('callback', callbackName);
+    url.searchParams.set('action', action);
+    url.searchParams.set('payload', JSON.stringify(payload || {}));
+    script.src = url.toString();
+    document.body.appendChild(script);
+  });
+}
+
+async function testSyncConnection(){
+  try {
+    await callSheetApi('ping', {
+      source: 'office-petty-cash',
+      checkedAt: new Date().toISOString()
+    });
+    alert('✅ Google Sheet 連線正常，可以開始備份。');
+  } catch (err){
+    alert(`❌ 測試失敗：${err.message}`);
+  }
+}
+
+async function syncTransactionById(id, options = {}){
+  const tx = transactions.find(item=>item.id===id);
+  if(!tx) return;
+  if(!getSheetUrl()){
+    updateTransactionSyncState(id, {
+      syncStatus: 'failed',
+      syncError: '尚未設定 Web App URL'
+    });
+    if(!options.silent) alert('請先在設定頁填入 Google Apps Script Web App URL。');
+    return;
+  }
+
+  updateTransactionSyncState(id, {
+    syncStatus: 'syncing',
+    syncError: ''
+  });
+
+  try {
+    await callSheetApi('upsertTransaction', buildSyncPayload(tx));
+    updateTransactionSyncState(id, {
+      syncStatus: 'synced',
+      syncError: '',
+      syncedAt: new Date().toISOString()
+    });
+  } catch (err){
+    updateTransactionSyncState(id, {
+      syncStatus: 'failed',
+      syncError: err.message
+    });
+    if(!options.silent) throw err;
+  }
+}
+
+async function retryUnsyncedTransactions(){
+  const list = getUnsyncedTransactions();
+  if(list.length===0){
+    alert('目前沒有待同步資料。');
+    return;
+  }
+  if(!getSheetUrl()){
+    alert('請先設定 Google Apps Script Web App URL。');
+    return;
+  }
+
+  let success = 0;
+  let failed = 0;
+  for(const tx of list){
+    try {
+      await syncTransactionById(tx.id, { silent: true });
+      const current = transactions.find(item=>item.id===tx.id);
+      if(current && current.syncStatus==='synced') success += 1;
+      else failed += 1;
+    } catch (err){
+      failed += 1;
+    }
+  }
+
+  renderAll();
+  alert(`補同步完成：成功 ${success} 筆，失敗 ${failed} 筆。`);
+}
+
+function showModal(title, msg, cb){
+  document.getElementById('modal-title').textContent = title;
+  document.getElementById('modal-msg').textContent = msg;
+  document.getElementById('modal').classList.remove('hidden');
+  modalCb = cb;
+  document.getElementById('modal-ok').onclick = ()=>{
+    const done = modalCb;
+    closeModal();
+    if(done) done();
+  };
+}
+
+function closeModal(){
+  document.getElementById('modal').classList.add('hidden');
+  modalCb = null;
+}
+
+init();
+</script>
+</body>
+</html>
