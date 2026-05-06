@@ -64,6 +64,18 @@
   .p-chip{padding:8px 4px;border:1.5px solid #e2e8f0;border-radius:8px;text-align:center;cursor:pointer;font-size:13px;color:#4a5568;transition:all .18s;user-select:none;}
   .p-chip:hover{border-color:#90cdf4;background:#ebf8ff;}
   .p-chip.sel{border-color:#3182ce;background:#ebf8ff;color:#2b6cb0;font-weight:700;}
+  .person-label-row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px;}
+  .person-label-row label{margin-bottom:0;}
+  .person-edit-btn{padding:5px 10px;border-radius:7px;border:1px solid #bee3f8;background:#ebf8ff;color:#2b6cb0;font-size:12px;font-weight:700;cursor:pointer;}
+  .person-edit-btn:hover{background:#bee3f8;}
+  .person-editor{margin-top:10px;padding:10px;border:1.5px solid #e2e8f0;border-radius:10px;background:#f7fafc;}
+  .person-add-row,.person-edit-row{display:flex;gap:7px;align-items:center;}
+  .person-add-row{margin-bottom:10px;}
+  .person-edit-list{display:grid;gap:7px;}
+  .person-name-input{flex:1;min-width:0;padding:8px 10px!important;border-radius:7px!important;font-size:13px!important;}
+  .person-icon-btn{width:34px;height:34px;border-radius:7px;border:1px solid #e2e8f0;background:#fff;color:#4a5568;font-size:17px;font-weight:800;line-height:1;cursor:pointer;flex:0 0 34px;}
+  .person-icon-btn.save{color:#2f855a;border-color:#9ae6b4;background:#f0fff4;}
+  .person-icon-btn.delete{color:#c53030;border-color:#feb2b2;background:#fff5f5;}
 
   /* ── Lunch amount inputs ── */
   .lunch-detail-box{background:#f7fafc;border-radius:10px;padding:14px;margin-top:10px;}
@@ -234,8 +246,18 @@
             <input type="number" id="lunch-grand-total" placeholder="請先輸入本餐總金額" min="0" oninput="calcLunchTotal()">
           </div>
           <div class="form-group">
-            <label>選擇用餐人員（可複選）</label>
+            <div class="person-label-row">
+              <label>選擇用餐人員（可複選）</label>
+              <button type="button" class="person-edit-btn" id="person-edit-toggle" onclick="togglePersonEditor()">編輯</button>
+            </div>
             <div class="person-grid" id="person-grid"></div>
+            <div class="person-editor hidden" id="person-editor">
+              <div class="person-add-row">
+                <input type="text" class="person-name-input" id="person-new-name" placeholder="輸入新增人員名稱">
+                <button type="button" class="btn btn-outline" onclick="addPerson()">新增人員</button>
+              </div>
+              <div class="person-edit-list" id="person-edit-list"></div>
+            </div>
           </div>
           <div id="sec-lunch-amt" class="hidden">
             <div class="lunch-detail-box">
@@ -392,7 +414,12 @@
 </div>
 
 <script>
-const PERSONS = ['琪琪','嘟姐','Wendy','姿閔','羿寧','弈妏','怡臻','老闆','阿姨','業代','臨時人員','其他'];
+const DEFAULT_PERSONS = ['琪琪','嘟姐','Wendy','姿閔','羿寧','奕妏','怡臻','老闆','阿姨','業代','麗如','其他'];
+const PERSON_STORAGE_KEY = 'pf_persons';
+const PERSON_NAME_ALIASES = {
+  '弈妏': '奕妏',
+  '臨時人員': '麗如'
+};
 
 const CAT_LABEL = {
   lunch: '🍱 午餐代墊',
@@ -414,14 +441,85 @@ const DEFAULT_SETTINGS = {
 };
 
 let settings = normalizeSettings(JSON.parse(localStorage.getItem('pf_settings') || 'null'));
+let persons = loadPersons();
 let transactions = normalizeTransactions(JSON.parse(localStorage.getItem('pf_txs') || '[]'));
 let currentType = 'expense';
 let selectedPax = new Set();
+let isPersonEditorOpen = false;
 let histFilter = 'all';
 let modalCb = null;
 let syncSeq = 0;
 let lastCloudSyncAt = '';
 let isLoadingCloud = false;
+
+function normalizePersonName(name) {
+  const value = String(name || '').trim();
+  return PERSON_NAME_ALIASES[value] || value;
+}
+
+function normalizePersons(raw) {
+  const base = Array.isArray(raw) ? raw : DEFAULT_PERSONS;
+  const seen = new Set();
+  return base
+    .map(normalizePersonName)
+    .filter(Boolean)
+    .filter(name => {
+      if (seen.has(name)) return false;
+      seen.add(name);
+      return true;
+    });
+}
+
+function loadPersons() {
+  let raw = null;
+  try {
+    raw = JSON.parse(localStorage.getItem(PERSON_STORAGE_KEY) || 'null');
+  } catch (err) {
+    raw = null;
+  }
+  return normalizePersons(raw);
+}
+
+function persistPersons() {
+  localStorage.setItem(PERSON_STORAGE_KEY, JSON.stringify(persons));
+}
+
+function escapeHtml(value) {
+  return String(value || '').replace(/[&<>"']/g, ch => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;'
+  }[ch]));
+}
+
+function replacePersonName(oldName, newName) {
+  const from = normalizePersonName(oldName);
+  const to = normalizePersonName(newName);
+  const changedTxs = [];
+  transactions.forEach(tx => {
+    let changed = false;
+    if (normalizePersonName(tx.person) === from) {
+      tx.person = to;
+      changed = true;
+    }
+    if (Array.isArray(tx.lunchDetails)) {
+      tx.lunchDetails.forEach(detail => {
+        if (normalizePersonName(detail.person) === from) {
+          detail.person = to;
+          changed = true;
+        }
+      });
+    }
+    if (changed) changedTxs.push(tx);
+  });
+  if (selectedPax.has(from)) {
+    selectedPax.delete(from);
+    selectedPax.add(to);
+  }
+  return changedTxs;
+}
 
 function normalizeSettings(raw) {
   return {
@@ -442,8 +540,10 @@ function normalizeTransaction(tx) {
     id: String(tx.id || createTxId()),
     amount: Number(tx.amount || 0),
     note: tx.note || '',
-    person: tx.person || '',
-    lunchDetails: Array.isArray(tx.lunchDetails) ? tx.lunchDetails : [],
+    person: normalizePersonName(tx.person || ''),
+    lunchDetails: Array.isArray(tx.lunchDetails)
+      ? tx.lunchDetails.map(d => ({ ...d, person: normalizePersonName(d.person || '') }))
+      : [],
     createdAt: tx.createdAt || new Date().toISOString(),
     syncStatus: tx.syncStatus || 'synced',
     syncError: tx.syncError || '',
@@ -462,14 +562,12 @@ function today() {
 async function init() {
   document.getElementById('f-date').value = today();
   hydrateSettingsForm();
+  transactions = normalizeTransactions(transactions);
+  persistPersons();
+  persistLocalCache();
   buildPersonGrid();
-
-  const sel = document.getElementById('inc-person');
-  PERSONS.forEach(p => {
-    const o = document.createElement('option');
-    o.value = o.textContent = p;
-    sel.appendChild(o);
-  });
+  buildPersonSelect();
+  renderPersonEditor();
 
   renderAll();
   if (settings.sheetUrl) {
@@ -533,13 +631,113 @@ function onIncCat() {
 function buildPersonGrid() {
   const grid = document.getElementById('person-grid');
   grid.innerHTML = '';
-  PERSONS.forEach(p => {
+  selectedPax = new Set([...selectedPax].filter(p => persons.includes(p)));
+  persons.forEach(p => {
     const d = document.createElement('div');
     d.className = 'p-chip' + (selectedPax.has(p) ? ' sel' : '');
     d.textContent = p;
     d.onclick = () => togglePax(p, d);
     grid.appendChild(d);
   });
+}
+
+function buildPersonSelect() {
+  const sel = document.getElementById('inc-person');
+  if (!sel) return;
+  const prev = sel.value;
+  sel.innerHTML = '';
+  persons.forEach(p => {
+    const o = document.createElement('option');
+    o.value = o.textContent = p;
+    sel.appendChild(o);
+  });
+  if (persons.includes(prev)) sel.value = prev;
+}
+
+function togglePersonEditor() {
+  isPersonEditorOpen = !isPersonEditorOpen;
+  document.getElementById('person-editor').classList.toggle('hidden', !isPersonEditorOpen);
+  document.getElementById('person-edit-toggle').textContent = isPersonEditorOpen ? '完成' : '編輯';
+  renderPersonEditor();
+}
+
+function renderPersonEditor() {
+  const list = document.getElementById('person-edit-list');
+  if (!list) return;
+  list.innerHTML = '';
+  persons.forEach((person, index) => {
+    const row = document.createElement('div');
+    row.className = 'person-edit-row';
+    row.innerHTML = `
+      <input type="text" class="person-name-input person-existing-name" value="${escapeHtml(person)}" data-index="${index}">
+      <button type="button" class="person-icon-btn save" title="儲存修改" onclick="savePerson(${index})">✓</button>
+      <button type="button" class="person-icon-btn delete" title="刪除" onclick="deletePerson(${index})">×</button>
+    `;
+    list.appendChild(row);
+  });
+}
+
+function refreshPeopleViews() {
+  buildPersonGrid();
+  buildPersonSelect();
+  buildLunchInputs();
+  renderPersonEditor();
+  renderAll();
+}
+
+function addPerson() {
+  const input = document.getElementById('person-new-name');
+  const name = normalizePersonName(input.value);
+  if (!name) {
+    alert('請輸入人員名稱');
+    return;
+  }
+  if (persons.includes(name)) {
+    alert('此人員已存在');
+    return;
+  }
+  persons.push(name);
+  input.value = '';
+  persistPersons();
+  refreshPeopleViews();
+}
+
+async function savePerson(index) {
+  const input = document.querySelector(`.person-existing-name[data-index="${index}"]`);
+  const oldName = persons[index];
+  const newName = normalizePersonName(input ? input.value : '');
+  if (!oldName) return;
+  if (!newName) {
+    alert('人員名稱不可空白');
+    return;
+  }
+  const duplicateIndex = persons.findIndex((person, i) => i !== index && person === newName);
+  if (duplicateIndex !== -1) {
+    alert('此人員已存在');
+    return;
+  }
+  persons[index] = newName;
+  const changedTxs = replacePersonName(oldName, newName);
+  persistPersons();
+  persistLocalCache();
+  refreshPeopleViews();
+  if (changedTxs.length > 0 && shouldUseCloudMode()) {
+    try {
+      await Promise.all(changedTxs.map(tx => callSheetApi('upsertTransaction', tx)));
+      await syncFromCloud({ silent: true });
+    } catch (err) {
+      alert(`人員名稱已存到本機，但同步既有記錄到 Google Sheet 失敗：${err.message}`);
+    }
+  }
+}
+
+function deletePerson(index) {
+  const oldName = persons[index];
+  if (!oldName) return;
+  persons.splice(index, 1);
+  selectedPax.delete(oldName);
+  persistPersons();
+  refreshPeopleViews();
 }
 
 function togglePax(p, el) {
@@ -570,8 +768,8 @@ function buildLunchInputs() {
     const row = document.createElement('div');
     row.className = 'lunch-row';
     row.innerHTML = `
-      <span class="lunch-name">${p}</span>
-      <input type="number" class="li lunch-input-field" data-p="${p}"
+      <span class="lunch-name">${escapeHtml(p)}</span>
+      <input type="number" class="li lunch-input-field" data-p="${escapeHtml(p)}"
              placeholder="$0" min="0" value="${vals[p] || ''}" oninput="calcLunchTotal()">`;
     box.appendChild(row);
   });
@@ -734,7 +932,7 @@ function calcBalance() {
 
 function calcPersonDebts() {
   const d = {};
-  PERSONS.forEach(p => { d[p] = { owed: 0, paid: 0 }; });
+  persons.forEach(p => { d[p] = { owed: 0, paid: 0 }; });
   transactions.forEach(tx => {
     if (tx.type === 'expense' && tx.category === 'lunch' && tx.lunchDetails) {
       tx.lunchDetails.forEach(ld => {
@@ -809,7 +1007,7 @@ function renderDebt() {
       : `<div class="debt-amt clear">✓ 已結清</div>`;
     return `<div class="debt-card ${cls}">
       <div>
-        <div class="debt-person-name">${e.person}</div>
+        <div class="debt-person-name">${escapeHtml(e.person)}</div>
         <div class="debt-sub">累計 $${Math.round(e.owed)} ／ 已繳 $${Math.round(e.paid)}</div>
       </div>
       ${amtT}
@@ -839,11 +1037,11 @@ function txRow(tx, showDel) {
 
   let detail = '';
   if (tx.category === 'lunch' && tx.lunchDetails) {
-    detail = tx.lunchDetails.map(d => `<span>${d.person} $${Math.round(d.amount)}</span>`).join(' &nbsp;·&nbsp; ');
+    detail = tx.lunchDetails.map(d => `<span>${escapeHtml(d.person)} $${Math.round(d.amount)}</span>`).join(' &nbsp;·&nbsp; ');
   } else if (tx.person) {
-    detail = tx.person;
+    detail = escapeHtml(tx.person);
   }
-  if (tx.note) detail += (detail ? ' ｜ ' : '') + tx.note;
+  if (tx.note) detail += (detail ? ' ｜ ' : '') + escapeHtml(tx.note);
 
   const syncStatus = tx.syncStatus || 'synced';
   return `<div class="tx-row">
