@@ -222,6 +222,16 @@
   .mode-toggle{display:flex;gap:6px;background:#f5f6f8;padding:4px;border-radius:12px;}
   .mode-toggle .type-btn{font-size:13.5px;padding:9px 6px;border-radius:9px;}
 
+  /* ── 新版本提示 ── */
+  .update-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;
+    padding:11px 16px;background:var(--blue);color:#fff;font-size:13.5px;font-weight:600;}
+  .update-actions{display:flex;gap:6px;flex-shrink:0;}
+  .update-btn{padding:6px 12px;border:none;border-radius:8px;cursor:pointer;font-family:inherit;
+    font-size:12.5px;font-weight:700;background:rgba(255,255,255,.2);color:#fff;}
+  .update-btn:hover{background:rgba(255,255,255,.3);}
+  .update-btn.primary{background:#fff;color:var(--blue);}
+  .version-line{text-align:center;font-size:12px;color:var(--muted);padding:2px 0 10px;font-variant-numeric:tabular-nums;}
+
   /* ── 個人明細 ── */
   .back-btn{display:inline-flex;align-items:center;gap:6px;padding:9px 14px;margin-bottom:12px;border:none;
     border-radius:11px;background:var(--surface);color:var(--sub);font-size:13.5px;font-weight:600;
@@ -258,6 +268,14 @@
 <body>
 
 <div class="topbar">
+  <div class="update-bar hidden" id="update-bar">
+    <span id="update-msg">有新版本可用</span>
+    <span class="update-actions">
+      <button class="update-btn primary" onclick="applyUpdate()">重新整理</button>
+      <button class="update-btn" onclick="dismissUpdate()">稍後</button>
+    </span>
+  </div>
+
   <header class="header">
     <div class="header-title">辦公室零用金</div>
     <div class="balance-pill" id="hBalance">餘額 $1,000</div>
@@ -541,6 +559,8 @@
     <div id="person-detail"></div>
   </div>
 
+  <div class="version-line" id="version-line"></div>
+
 </div><!-- /content -->
 
 <!-- ═══ Modal ═══ -->
@@ -556,6 +576,9 @@
 </div>
 
 <script>
+const APP_VERSION = '2026.08.31.1';   // 每次改版都要 +1，新版偵測靠這個字串比對
+const UPDATE_CHECK_INTERVAL = 10 * 60 * 1000;
+
 const DEFAULT_PERSONS = ['琪琪','嘟姐','Wendy','姿閔','羿寧','奕妏','怡臻','老闆','阿姨','業代','麗如','明宏','其他'];
 const PERSON_STORAGE_KEY = 'pf_persons';
 const PERSON_VERSION_KEY = 'pf_persons_version';
@@ -764,6 +787,7 @@ async function init() {
   onIncCat();
 
   renderAll();
+  startUpdateWatch();
   if (settings.sheetUrl) {
     await syncFromCloud({ silent: true });
   }
@@ -1883,6 +1907,65 @@ async function syncFromCloud(options = {}) {
     isLoadingCloud = false;
     renderSyncSummary();
   }
+}
+
+// ── 新版本偵測 ──────────────────────────────────────────────
+// GitHub Pages 給 index.html 的 cache-control 是 10 分鐘，分頁一直開著更是永遠不會更新。
+// 這裡直接去抓伺服器上的檔案，比對裡面的 APP_VERSION 跟目前跑的版本是否相同。
+let lastUpdateCheck = 0;
+let pendingVersion = '';
+
+async function checkForUpdate() {
+  const now = Date.now();
+  if (now - lastUpdateCheck < 60000) return;   // 最快一分鐘查一次
+  lastUpdateCheck = now;
+
+  try {
+    const res = await fetch(location.pathname + '?_v=' + now, { cache: 'no-store' });
+    if (!res.ok) return;
+    const text = await res.text();
+    const found = /APP_VERSION\s*=\s*'([^']+)'/.exec(text);
+    if (!found) return;
+
+    const serverVersion = found[1];
+    if (serverVersion === APP_VERSION) {
+      pendingVersion = '';
+      document.getElementById('update-bar').classList.add('hidden');
+      return;
+    }
+    if (sessionStorage.getItem('pf_update_dismissed') === serverVersion) return;
+
+    pendingVersion = serverVersion;
+    document.getElementById('update-msg').textContent = `有新版本 ${serverVersion}`;
+    document.getElementById('update-bar').classList.remove('hidden');
+  } catch (err) {
+    // 離線或暫時連不上就略過，下次再查
+  }
+}
+
+function applyUpdate() {
+  // 帶一個變動的參數，確保繞過瀏覽器與 CDN 快取
+  location.replace(location.pathname + '?v=' + Date.now());
+}
+
+function dismissUpdate() {
+  if (pendingVersion) {
+    try { sessionStorage.setItem('pf_update_dismissed', pendingVersion); } catch (err) {}
+  }
+  document.getElementById('update-bar').classList.add('hidden');
+}
+
+function startUpdateWatch() {
+  const line = document.getElementById('version-line');
+  if (line) line.textContent = '版本 ' + APP_VERSION;
+
+  setTimeout(checkForUpdate, 3000);
+  setInterval(checkForUpdate, UPDATE_CHECK_INTERVAL);
+  // 分頁一直開著的情況：切回來就檢查一次
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) checkForUpdate();
+  });
+  window.addEventListener('focus', checkForUpdate);
 }
 
 function showModal(title, msg, cb) {
