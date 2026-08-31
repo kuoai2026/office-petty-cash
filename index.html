@@ -51,7 +51,7 @@
   .card-title{font-size:14px;font-weight:700;color:var(--text);margin-bottom:18px;letter-spacing:-.02em;}
 
   /* ── Stats ── */
-  .balance-hero{text-align:left;padding:2px 0 22px;}
+  .balance-hero{text-align:left;padding:2px 0 4px;}
   .balance-hero-label{font-size:13px;color:var(--sub);margin-bottom:6px;font-weight:500;}
   .balance-hero-val{font-size:38px;font-weight:800;letter-spacing:-.03em;font-variant-numeric:tabular-nums;}
   .stats-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
@@ -209,6 +209,50 @@
   .tx-sync-pill.synced{color:var(--muted);}
   .tx-sync-pill.pending,.tx-sync-pill.syncing{color:#f5a623;}
   .tx-sync-pill.failed{color:var(--red);}
+
+  /* ── 現金拆解 / 個人帳戶 ── */
+  .cash-breakdown{border-top:1px solid var(--line);margin-top:18px;padding-top:14px;display:grid;gap:9px;}
+  .cash-line{display:flex;justify-content:space-between;align-items:baseline;font-size:13px;color:var(--sub);font-variant-numeric:tabular-nums;}
+  .cash-line b{font-weight:600;color:var(--text);}
+  .account-summary{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;}
+  .account-sum-box{background:var(--surface);border-radius:var(--radius);padding:20px 18px;}
+  .account-sum-val{font-size:26px;font-weight:800;letter-spacing:-.03em;font-variant-numeric:tabular-nums;margin-top:5px;}
+  .debt-amt.stored{color:var(--blue);}
+  .cashless-tag{display:inline-block;margin-left:7px;padding:2px 7px;border-radius:6px;background:#f2f3f5;color:var(--sub);font-size:11px;font-weight:600;vertical-align:middle;}
+  .mode-toggle{display:flex;gap:6px;background:#f5f6f8;padding:4px;border-radius:12px;}
+  .mode-toggle .type-btn{font-size:13.5px;padding:9px 6px;border-radius:9px;}
+
+  /* ── 個人明細 ── */
+  .back-btn{display:inline-flex;align-items:center;gap:6px;padding:9px 14px;margin-bottom:12px;border:none;
+    border-radius:11px;background:var(--surface);color:var(--sub);font-size:13.5px;font-weight:600;
+    cursor:pointer;font-family:inherit;}
+  .back-btn:hover{color:var(--text);}
+  .pd-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;}
+  .pd-name{font-size:22px;font-weight:800;letter-spacing:-.03em;}
+  .pd-state{font-size:26px;font-weight:800;letter-spacing:-.03em;font-variant-numeric:tabular-nums;margin-top:6px;}
+  .pd-meta{font-size:12.5px;color:var(--muted);margin-top:6px;font-variant-numeric:tabular-nums;}
+  .free-tag{display:inline-block;padding:3px 9px;border-radius:7px;background:#f2f3f5;color:var(--sub);font-size:11.5px;font-weight:700;}
+  .month-head{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:13px 0;
+    border-bottom:1px solid var(--line);cursor:pointer;user-select:none;}
+  .month-name{font-size:14px;font-weight:700;letter-spacing:-.02em;}
+  .month-name .chev{color:var(--muted);font-size:11px;margin-left:5px;}
+  .month-sum{font-size:11.5px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap;}
+  .pd-row{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;padding:13px 0 13px 10px;
+    border-bottom:1px solid var(--line);}
+  .pd-row:last-child{border-bottom:none;}
+  .pd-label{font-size:13.5px;font-weight:600;}
+  .pd-date{font-size:11.5px;color:var(--muted);margin-left:7px;font-weight:500;font-variant-numeric:tabular-nums;}
+  .pd-sub{font-size:12px;color:var(--muted);margin-top:4px;line-height:1.5;}
+  .pd-amt{font-size:15px;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap;flex-shrink:0;}
+  .pd-amt.neg{color:var(--red);} .pd-amt.pos{color:var(--green);} .pd-amt.muted{color:var(--muted);font-size:13px;}
+  .pd-total{margin-top:4px;padding-top:16px;border-top:2px solid var(--line);display:grid;gap:10px;}
+  .pd-total-line{display:flex;justify-content:space-between;font-size:13.5px;color:var(--sub);font-variant-numeric:tabular-nums;}
+  .pd-total-line b{color:var(--text);font-weight:700;}
+  .pd-total-line.final{font-size:16px;padding-top:10px;border-top:1px solid var(--line);}
+  .pd-total-line.final b{font-size:20px;font-weight:800;letter-spacing:-.02em;}
+  .debt-card.tappable{cursor:pointer;}
+  .debt-card.tappable:hover{background:#fafbfc;}
+  .row-chev{color:var(--muted);font-size:15px;margin-left:2px;flex-shrink:0;}
 </style>
 </head>
 <body>
@@ -222,7 +266,7 @@
   <nav class="nav">
     <button class="nav-btn active" onclick="tab('overview')">總覽</button>
     <button class="nav-btn" onclick="tab('add')">新增</button>
-    <button class="nav-btn" onclick="tab('debt')">欠款</button>
+    <button class="nav-btn" onclick="tab('debt')">帳戶</button>
     <button class="nav-btn" onclick="tab('history')">記錄</button>
     <button class="nav-btn" onclick="tab('settings')">設定</button>
   </nav>
@@ -234,10 +278,14 @@
   <div id="tab-overview">
     <div class="card">
       <div class="balance-hero">
-        <div class="balance-hero-label">目前零用金餘額</div>
-        <div class="balance-hero-val" id="mainBal">$1,000</div>
+        <div class="balance-hero-label">公司零用金（可動用）</div>
+        <div class="balance-hero-val" id="mainBal">$0</div>
       </div>
-      <div class="stats-row">
+      <div class="cash-breakdown">
+        <div class="cash-line"><span>帳面現金（盒內實有）</span><b id="s-cash">$0</b></div>
+        <div class="cash-line"><span>代管儲值（同仁的錢）</span><b id="s-stored">−$0</b></div>
+      </div>
+      <div class="stats-row" style="margin-top:16px;">
         <div class="stat-box"><div class="stat-val c-green" id="s-income">$0</div><div class="stat-label">累計收入</div></div>
         <div class="stat-box"><div class="stat-val c-red" id="s-expense">$0</div><div class="stat-label">累計支出</div></div>
       </div>
@@ -246,10 +294,10 @@
     <div class="card">
       <div class="card-title">待收欠款</div>
       <div style="margin-bottom:18px;">
-        <div style="font-size:12.5px;color:var(--sub);margin-bottom:6px;">同仁尚未繳納午餐費</div>
+        <div style="font-size:12.5px;color:var(--sub);margin-bottom:6px;">同仁尚未繳回的費用</div>
         <div class="stat-val c-red" style="font-size:30px;" id="s-owing">$0</div>
       </div>
-      <button class="mega-btn" onclick="tab('debt')">查看個人欠款明細</button>
+      <button class="mega-btn" onclick="tab('debt')">查看個人帳戶明細</button>
     </div>
 
     <div class="card">
@@ -282,6 +330,7 @@
             <option value="shipping">📦 廠商運費</option>
             <option value="boss_treat">🎁 老闆請客</option>
             <option value="reimbursement">🧾 請款</option>
+            <option value="deposit_refund">↩️ 儲值退還</option>
             <option value="other_expense">📌 其他</option>
           </select>
         </div>
@@ -321,9 +370,28 @@
 
         <!-- 其他支出金額 -->
         <div id="sec-other-exp" class="hidden">
+          <div id="sec-exp-person" class="hidden">
+            <div class="form-group">
+              <label>人員</label>
+              <select id="exp-person" onchange="updateAccountHint()"></select>
+            </div>
+          </div>
           <div class="form-group">
             <label>金額</label>
-            <input type="number" id="other-exp-amt" placeholder="請輸入金額" min="0">
+            <input type="number" id="other-exp-amt" placeholder="請輸入金額" min="0" oninput="updateAccountHint()">
+          </div>
+          <div id="sec-reimb-mode" class="hidden">
+            <div class="form-group">
+              <label>請款方式</label>
+              <div class="mode-toggle">
+                <button type="button" class="type-btn sel-exp" id="btn-reimb-cash" onclick="setReimbMode('cash')">請款（給現金）</button>
+                <button type="button" class="type-btn" id="btn-reimb-offset" onclick="setReimbMode('offset')">折抵（轉成儲值）</button>
+              </div>
+              <div class="balance-bar idle hidden" id="reimb-hint">
+                <span class="bal-label" id="reimb-hint-label"></span>
+                <span class="bal-diff idle" id="reimb-hint-diff"></span>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -339,6 +407,7 @@
           <label>收入類型</label>
           <select id="inc-cat" onchange="onIncCat()">
             <option value="lunch_return">🙋 午餐錢代墊返還</option>
+            <option value="deposit">🏦 儲值</option>
             <option value="sales_buy">💼 業代購買商品</option>
             <option value="staff_buy">👤 同仁購買商品</option>
             <option value="pharmacist_income">💊 郭藥師入帳</option>
@@ -348,12 +417,25 @@
         <div id="sec-inc-person">
           <div class="form-group">
             <label>人員</label>
-            <select id="inc-person"></select>
+            <select id="inc-person" onchange="updateAccountHint()"></select>
           </div>
         </div>
         <div class="form-group">
           <label>金額（實際入帳）</label>
-          <input type="number" id="inc-amt" placeholder="請輸入金額" min="0" oninput="calcChange()">
+          <input type="number" id="inc-amt" placeholder="請輸入金額" min="0" oninput="calcChange();updateAccountHint()">
+        </div>
+        <div id="sec-staffbuy-mode" class="hidden">
+          <div class="form-group">
+            <label>付款方式</label>
+            <div class="mode-toggle">
+              <button type="button" class="type-btn sel-inc" id="btn-staffbuy-cash" onclick="setStaffBuyMode('cash')">付現金</button>
+              <button type="button" class="type-btn" id="btn-staffbuy-deduct" onclick="setStaffBuyMode('deduct')">扣儲值</button>
+            </div>
+            <div class="balance-bar idle hidden" id="staffbuy-hint">
+              <span class="bal-label" id="staffbuy-hint-label"></span>
+              <span class="bal-diff idle" id="staffbuy-hint-diff"></span>
+            </div>
+          </div>
         </div>
         <div class="form-group">
           <label>對方給的現金（選填，只用來算找零）</label>
@@ -375,7 +457,7 @@
 
   <!-- ═══ 欠款 ═══ -->
   <div id="tab-debt" class="hidden">
-    <button class="mega-btn" style="margin-bottom:12px;" onclick="renderDebt()">重新計算欠款</button>
+    <button class="mega-btn" style="margin-bottom:12px;" onclick="renderDebt()">重新計算帳戶</button>
     <div id="debt-results"></div>
   </div>
 
@@ -388,6 +470,7 @@
         <button class="f-chip" onclick="setFilter('income',this)">收入</button>
         <button class="f-chip" onclick="setFilter('lunch',this)">午餐</button>
         <button class="f-chip" onclick="setFilter('lunch_return',this)">繳款</button>
+        <button class="f-chip" onclick="setFilter('account',this)">儲值</button>
       </div>
       <div id="history-list"></div>
     </div>
@@ -452,6 +535,12 @@
     </div>
   </div>
 
+  <!-- ═══ 個人明細 ═══ -->
+  <div id="tab-person" class="hidden">
+    <button class="back-btn" onclick="tab('debt')">← 返回帳戶</button>
+    <div id="person-detail"></div>
+  </div>
+
 </div><!-- /content -->
 
 <!-- ═══ Modal ═══ -->
@@ -477,18 +566,30 @@ const PERSON_NAME_ALIASES = {
   '臨時人員': '麗如'
 };
 
-// 餐費由公司吸收、不需要繳回零用金的人；仍可選為用餐人員，只是不列入欠款統計
+// 午餐由公司吸收的人：午餐份額與午餐返還都不列入個人帳，
+// 但儲值、儲值退還、扣儲值採買照算，所以他們仍保留在所有人員名單裡。
 const NO_DEBT_PERSONS = ['阿姨', '老闆'];
+
+// 不影響零用金現金、只動個人帳戶的類別
+const CASHLESS_CATEGORIES = ['staff_buy_deduct', 'reimbursement_offset'];
+// 個人帳戶相關類別（記錄頁「儲值」篩選用）
+const ACCOUNT_CATEGORIES = ['deposit', 'deposit_refund', 'staff_buy_deduct', 'reimbursement_offset'];
+// 需要選擇人員的支出類別
+const EXPENSE_PERSON_CATS = ['reimbursement', 'deposit_refund'];
 
 const CAT_LABEL = {
   lunch: '🍱 午餐代墊',
   shipping: '📦 廠商運費',
   boss_treat: '🎁 老闆請客',
   reimbursement: '🧾 請款',
+  reimbursement_offset: '🧾 請款折抵',
+  deposit_refund: '↩️ 儲值退還',
   other_expense: '📌 其他支出',
   lunch_return: '🙋 午餐返還',
+  deposit: '🏦 儲值',
   sales_buy: '💼 業代購買',
   staff_buy: '👤 同仁購買',
+  staff_buy_deduct: '👤 同仁購買（扣儲值）',
   pharmacist_income: '💊 郭藥師入帳',
   other_inc: '📋 其他收入'
 };
@@ -507,6 +608,11 @@ let selectedPax = new Set();
 let isPersonEditorOpen = false;
 let histFilter = 'all';
 let debtRows = [];
+let personView = null;        // 目前正在看誰的明細
+let personOpenMonths = null;  // 明細頁展開的月份；null = 尚未初始化（預設展開最新月）
+let personOthersOpen = false;
+let reimbMode = 'cash';       // cash = 給現金請款 / offset = 折抵轉成儲值
+let staffBuyMode = 'cash';    // cash = 付現金 / deduct = 扣儲值
 let modalCb = null;
 let syncSeq = 0;
 let lastCloudSyncAt = '';
@@ -652,6 +758,10 @@ async function init() {
   buildPersonGrid();
   buildPersonSelect();
   renderPersonEditor();
+  setReimbMode('cash');
+  setStaffBuyMode('cash');
+  onExpCat();
+  onIncCat();
 
   renderAll();
   if (settings.sheetUrl) {
@@ -673,19 +783,24 @@ function persistLocalCache() {
 function renderAll() {
   renderOverview();
   renderDebt();
+  renderPersonDetail();
   renderHistory();
   renderSyncSummary();
   updateHeader();
 }
 
 const TABS = ['overview', 'add', 'debt', 'history', 'settings'];
+const SCREENS = TABS.concat(['person']);
 
 function tab(t) {
-  TABS.forEach(id => {
-    document.getElementById('tab-' + id).classList.toggle('hidden', id !== t);
+  if (t !== 'person') personView = null;
+  SCREENS.forEach(id => {
+    const el = document.getElementById('tab-' + id);
+    if (el) el.classList.toggle('hidden', id !== t);
   });
+  const navTarget = t === 'person' ? 'debt' : t;
   document.querySelectorAll('.nav-btn').forEach((b, i) => {
-    b.classList.toggle('active', TABS[i] === t);
+    b.classList.toggle('active', TABS[i] === navTarget);
   });
   if (t === 'debt') renderDebt();
   if (t === 'history') renderHistory();
@@ -705,11 +820,85 @@ function onExpCat() {
   const v = document.getElementById('exp-cat').value;
   document.getElementById('sec-lunch').classList.toggle('hidden', v !== 'lunch');
   document.getElementById('sec-other-exp').classList.toggle('hidden', v === 'lunch');
+  document.getElementById('sec-exp-person').classList.toggle('hidden', !EXPENSE_PERSON_CATS.includes(v));
+  document.getElementById('sec-reimb-mode').classList.toggle('hidden', v !== 'reimbursement');
+  updateAccountHint();
 }
 
 function onIncCat() {
   const v = document.getElementById('inc-cat').value;
   document.getElementById('sec-inc-person').classList.toggle('hidden', v === 'other_inc' || v === 'pharmacist_income');
+  document.getElementById('sec-staffbuy-mode').classList.toggle('hidden', v !== 'staff_buy');
+  updateAccountHint();
+}
+
+function setReimbMode(mode) {
+  reimbMode = mode;
+  document.getElementById('btn-reimb-cash').className = 'type-btn' + (mode === 'cash' ? ' sel-exp' : '');
+  document.getElementById('btn-reimb-offset').className = 'type-btn' + (mode === 'offset' ? ' sel-exp' : '');
+  updateAccountHint();
+}
+
+function setStaffBuyMode(mode) {
+  staffBuyMode = mode;
+  document.getElementById('btn-staffbuy-cash').className = 'type-btn' + (mode === 'cash' ? ' sel-inc' : '');
+  document.getElementById('btn-staffbuy-deduct').className = 'type-btn' + (mode === 'deduct' ? ' sel-inc' : '');
+  updateAccountHint();
+}
+
+// 折抵 / 扣儲值時，即時顯示這個人記錄前後的帳戶狀態
+function updateAccountHint() {
+  const expCat = document.getElementById('exp-cat');
+  const incCat = document.getElementById('inc-cat');
+  renderAccountHint('reimb',
+    document.getElementById('exp-person'),
+    document.getElementById('other-exp-amt'),
+    !!expCat && expCat.value === 'reimbursement' && reimbMode === 'offset',
+    1);
+  renderAccountHint('staffbuy',
+    document.getElementById('inc-person'),
+    document.getElementById('inc-amt'),
+    !!incCat && incCat.value === 'staff_buy' && staffBuyMode === 'deduct',
+    -1);
+}
+
+function renderAccountHint(prefix, personEl, amtEl, active, sign) {
+  const bar = document.getElementById(prefix + '-hint');
+  if (!bar) return;
+  if (!active) {
+    bar.classList.add('hidden');
+    return;
+  }
+  const label = document.getElementById(prefix + '-hint-label');
+  const diffEl = document.getElementById(prefix + '-hint-diff');
+  const person = personEl ? personEl.value : '';
+  const amount = parseFloat(amtEl ? amtEl.value : '') || 0;
+  const before = personBalance(person);
+  const after = before + sign * amount;
+
+  label.textContent = `${person || '未選人員'}目前${balanceText(before)}`;
+  if (!person || amount <= 0) {
+    bar.className = 'balance-bar idle';
+    diffEl.className = 'bal-diff idle';
+    diffEl.textContent = '待填金額';
+    return;
+  }
+  const state = after < 0 ? 'ng' : 'info';
+  bar.className = 'balance-bar ' + state;
+  diffEl.className = 'bal-diff ' + state;
+  diffEl.textContent = `記錄後${balanceText(after)}`;
+}
+
+function balanceText(value) {
+  const n = Math.round(value);
+  if (n > 0) return `儲值 $${n.toLocaleString()}`;
+  if (n < 0) return `欠款 $${Math.abs(n).toLocaleString()}`;
+  return '結清 $0';
+}
+
+function personBalance(person) {
+  const acc = calcPersonAccounts()[person];
+  return acc ? acc.funded - acc.spent : 0;
 }
 
 function buildPersonGrid() {
@@ -726,16 +915,18 @@ function buildPersonGrid() {
 }
 
 function buildPersonSelect() {
-  const sel = document.getElementById('inc-person');
-  if (!sel) return;
-  const prev = sel.value;
-  sel.innerHTML = '';
-  persons.forEach(p => {
-    const o = document.createElement('option');
-    o.value = o.textContent = p;
-    sel.appendChild(o);
+  ['inc-person', 'exp-person'].forEach(id => {
+    const sel = document.getElementById(id);
+    if (!sel) return;
+    const prev = sel.value;
+    sel.innerHTML = '';
+    persons.forEach(p => {
+      const o = document.createElement('option');
+      o.value = o.textContent = p;
+      sel.appendChild(o);
+    });
+    if (persons.includes(prev)) sel.value = prev;
   });
-  if (persons.includes(prev)) sel.value = prev;
 }
 
 function togglePersonEditor() {
@@ -971,17 +1162,34 @@ function collectTransactionFromForm() {
       if (!amt || amt <= 0) throw new Error('請填入有效金額');
       tx.amount = amt;
       tx.lunchDetails = [];
+
+      if (EXPENSE_PERSON_CATS.includes(cat)) {
+        const person = document.getElementById('exp-person').value;
+        if (!person) throw new Error('請選擇人員');
+        tx.person = person;
+      }
+      // 折抵：不動現金，整筆轉進他的個人帳戶
+      if (cat === 'reimbursement' && reimbMode === 'offset') {
+        tx.category = 'reimbursement_offset';
+      }
     }
   } else {
     const cat = document.getElementById('inc-cat').value;
     const amt = parseFloat(document.getElementById('inc-amt').value);
     if (!amt || amt <= 0) throw new Error('請填入有效金額');
-    tx.type = 'income';
-    tx.category = cat;
     tx.amount = amt;
     tx.note = document.getElementById('inc-note').value.trim();
     tx.person = (cat !== 'other_inc' && cat !== 'pharmacist_income') ? document.getElementById('inc-person').value : '';
     tx.lunchDetails = [];
+
+    if (cat === 'staff_buy' && staffBuyMode === 'deduct') {
+      // 扣儲值：現金不進來，只從他的個人帳戶扣
+      tx.type = 'expense';
+      tx.category = 'staff_buy_deduct';
+    } else {
+      tx.type = 'income';
+      tx.category = cat;
+    }
   }
 
   return tx;
@@ -1025,6 +1233,8 @@ function resetForm() {
   document.getElementById('exp-cat').value = 'lunch';
   document.getElementById('inc-cat').value = 'lunch_return';
   document.getElementById('f-date').value = today();
+  setReimbMode('cash');
+  setStaffBuyMode('cash');
   onExpCat();
   onIncCat();
 }
@@ -1037,54 +1247,85 @@ function sortTransactions() {
   });
 }
 
+function isCashless(tx) {
+  return CASHLESS_CATEGORIES.includes(tx.category);
+}
+
 function calcBalance() {
   let bal = Number(settings.initialBalance || 0);
-  transactions.forEach(t => { bal += t.type === 'income' ? t.amount : -t.amount; });
+  transactions.forEach(t => {
+    if (isCashless(t)) return;
+    bal += t.type === 'income' ? t.amount : -t.amount;
+  });
   return bal;
 }
 
-function calcPersonDebts() {
-  const d = {};
-  persons.forEach(p => {
-    if (NO_DEBT_PERSONS.includes(p)) return;
-    d[p] = { owed: 0, paid: 0 };
-  });
+// 個人帳戶：funded = 他投入的錢，spent = 他花掉的錢，結餘 = funded - spent
+// 結餘為正 = 儲值餘額，為負 = 欠款
+function calcPersonAccounts() {
+  const acc = {};
+  persons.forEach(p => { acc[p] = { spent: 0, funded: 0, absorbed: 0 }; });
+
   transactions.forEach(tx => {
-    if (tx.type === 'expense' && tx.category === 'lunch' && tx.lunchDetails) {
-      tx.lunchDetails.forEach(ld => {
-        if (d[ld.person]) d[ld.person].owed += Number(ld.amount || 0);
+    const amt = Number(tx.amount || 0);
+
+    if (tx.category === 'lunch') {
+      (tx.lunchDetails || []).forEach(ld => {
+        if (!acc[ld.person]) return;
+        if (NO_DEBT_PERSONS.includes(ld.person)) {         // 午餐由公司吸收，只記錄不計帳
+          acc[ld.person].absorbed += Number(ld.amount || 0);
+          return;
+        }
+        acc[ld.person].spent += Number(ld.amount || 0);
       });
+      return;
     }
-    if (tx.type === 'income' && tx.category === 'lunch_return' && tx.person) {
-      if (d[tx.person]) d[tx.person].paid += Number(tx.amount || 0);
+
+    const p = tx.person;
+    if (!p || !acc[p]) return;
+
+    if (tx.category === 'lunch_return') {
+      if (NO_DEBT_PERSONS.includes(p)) return;             // 午餐免費，過去的繳款也不計
+      acc[p].funded += amt;
+    } else if (tx.category === 'deposit' || tx.category === 'reimbursement_offset') {
+      acc[p].funded += amt;
+    } else if (tx.category === 'deposit_refund') {
+      acc[p].funded -= amt;
+    } else if (tx.category === 'staff_buy_deduct') {
+      acc[p].spent += amt;
     }
   });
-  return d;
+
+  return acc;
 }
 
-function totalOwing() {
-  const d = calcPersonDebts();
-  return Object.values(d).reduce((s, v) => {
-    const o = v.owed - v.paid;
-    return s + (o > 0 ? o : 0);
-  }, 0);
+function accountTotals() {
+  let owing = 0, stored = 0;
+  Object.values(calcPersonAccounts()).forEach(v => {
+    const bal = v.funded - v.spent;
+    if (bal < 0) owing += -bal;
+    else stored += bal;
+  });
+  return { owing, stored };
 }
 
 function updateHeader() {
-  const b = calcBalance();
-  document.getElementById('hBalance').textContent = '餘額 $' + Math.round(b).toLocaleString();
+  const usable = calcBalance() - accountTotals().stored;
+  document.getElementById('hBalance').textContent = '可用 $' + Math.round(usable).toLocaleString();
 }
 
 function renderOverview() {
-  const bal = calcBalance();
-  const inc = transactions.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
-  const exp = transactions.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
-  const ow = totalOwing();
+  const cash = calcBalance();
+  const { owing, stored } = accountTotals();
+  const inc = transactions.filter(t => t.type === 'income' && !isCashless(t)).reduce((s, t) => s + t.amount, 0);
+  const exp = transactions.filter(t => t.type === 'expense' && !isCashless(t)).reduce((s, t) => s + t.amount, 0);
 
-  document.getElementById('mainBal').textContent = '$' + Math.round(bal).toLocaleString();
+  document.getElementById('mainBal').textContent = '$' + Math.round(cash - stored).toLocaleString();
+  document.getElementById('s-cash').textContent = '$' + Math.round(cash).toLocaleString();
+  document.getElementById('s-stored').textContent = '−$' + Math.round(stored).toLocaleString();
   document.getElementById('s-income').textContent = '$' + Math.round(inc).toLocaleString();
   document.getElementById('s-expense').textContent = '$' + Math.round(exp).toLocaleString();
-  document.getElementById('s-owing').textContent = '$' + Math.round(ow).toLocaleString();
+  document.getElementById('s-owing').textContent = '$' + Math.round(owing).toLocaleString();
   updateHeader();
 
   const recent = transactions.slice(0, 5);
@@ -1095,52 +1336,76 @@ function renderOverview() {
 }
 
 function renderDebt() {
-  const debts = calcPersonDebts();
+  const acc = calcPersonAccounts();
   const el = document.getElementById('debt-results');
 
-  const list = Object.entries(debts)
-    .map(([p, d]) => ({ person: p, owed: d.owed, paid: d.paid, out: d.owed - d.paid }))
-    .filter(e => e.owed > 0)
-    .sort((a, b) => b.out - a.out);
+  const list = persons
+    .map(p => {
+      const v = acc[p] || { spent: 0, funded: 0, absorbed: 0 };
+      return {
+        person: p, spent: v.spent, funded: v.funded, absorbed: v.absorbed,
+        bal: v.funded - v.spent, free: NO_DEBT_PERSONS.includes(p)
+      };
+    })
+    .filter(e => e.spent !== 0 || e.funded !== 0 || e.absorbed !== 0)
+    .sort((a, b) => {
+      if (a.free !== b.free) return a.free ? 1 : -1;   // 午餐免付的排最後
+      return a.bal - b.bal;                            // 欠最多的排最前
+    });
+
+  const { owing, stored } = accountTotals();
+  debtRows = list;
+
+  const summary = `
+    <div class="account-summary">
+      <div class="account-sum-box">
+        <div class="debt-summary-label">待收欠款</div>
+        <div class="account-sum-val c-red">$${Math.round(owing).toLocaleString()}</div>
+      </div>
+      <div class="account-sum-box">
+        <div class="debt-summary-label">代管儲值</div>
+        <div class="account-sum-val c-blue">$${Math.round(stored).toLocaleString()}</div>
+      </div>
+    </div>`;
 
   if (list.length === 0) {
-    el.innerHTML = '<div class="card"><div class="empty"><div class="empty-icon">🎉</div>目前沒有午餐欠款記錄</div></div>';
+    el.innerHTML = summary + '<div class="card"><div class="empty"><div class="empty-icon">🎉</div>目前沒有任何帳戶記錄</div></div>';
     return;
   }
 
-  const total = list.reduce((s, e) => s + (e.out > 0 ? e.out : 0), 0);
-  debtRows = list;
-
-  el.innerHTML = `
-    <div class="debt-summary">
-      <div class="debt-summary-label">所有同仁尚欠總計</div>
-      <div class="debt-summary-val">$${Math.round(total).toLocaleString()}</div>
-    </div>
-    <div class="debt-list">
-  ` + list.map((e, i) => {
-    const hasDebt = e.out > 0;
-    const cls = hasDebt ? 'owes' : 'clear';
-    const amtT = hasDebt
-      ? `<div class="debt-amt owes">尚欠 $${Math.round(e.out).toLocaleString()}</div>`
-      : `<div class="debt-amt clear">已結清</div>`;
-    const btn = hasDebt
-      ? `<button class="debt-collect" onclick="collectFrom(${i})">收款</button>`
-      : '';
-    return `<div class="debt-card ${cls}">
+  el.innerHTML = summary + '<div class="debt-list">' + list.map((e, i) => {
+    let cls, amtT, sub, btn = '';
+    if (e.free) {
+      cls = 'clear';
+      amtT = '<div class="debt-amt clear"><span class="free-tag">午餐免付</span></div>';
+      sub = `公司吸收 $${Math.round(e.absorbed).toLocaleString()}`;
+    } else {
+      sub = `消費 $${Math.round(e.spent).toLocaleString()} ／ 投入 $${Math.round(e.funded).toLocaleString()}`;
+      if (e.bal < 0) {
+        cls = 'owes';
+        amtT = `<div class="debt-amt owes">尚欠 $${Math.round(-e.bal).toLocaleString()}</div>`;
+        btn = `<button class="debt-collect" onclick="event.stopPropagation();collectFrom(${i})">收款</button>`;
+      } else if (e.bal > 0) {
+        cls = 'stored';
+        amtT = `<div class="debt-amt stored">儲值 $${Math.round(e.bal).toLocaleString()}</div>`;
+      } else {
+        cls = 'clear';
+        amtT = '<div class="debt-amt clear">已結清</div>';
+      }
+    }
+    return `<div class="debt-card tappable ${cls}" onclick="openPerson(${i})">
       <div>
         <div class="debt-person-name">${escapeHtml(e.person)}</div>
-        <div class="debt-sub">累計 $${Math.round(e.owed).toLocaleString()} ／ 已繳 $${Math.round(e.paid).toLocaleString()}</div>
+        <div class="debt-sub">${sub}</div>
       </div>
       <div class="debt-right">${amtT}${btn}</div>
+      <span class="row-chev">›</span>
     </div>`;
   }).join('') + '</div>';
 }
 
-// 從欠款頁一鍵收款：跳到新增頁，自動帶入人員與尚欠金額
-function collectFrom(index) {
-  const row = debtRows[index];
-  if (!row) return;
-
+// 從帳戶頁或明細頁一鍵收款：跳到新增頁，自動帶入人員與尚欠金額
+function startCollect(person, amount) {
   tab('add');
   setType('income');
 
@@ -1150,21 +1415,223 @@ function collectFrom(index) {
 
   buildPersonSelect();
   const sel = document.getElementById('inc-person');
-  if (!persons.includes(row.person)) {
+  if (!persons.includes(person)) {
     const opt = document.createElement('option');
-    opt.value = opt.textContent = row.person;
+    opt.value = opt.textContent = person;
     sel.appendChild(opt);
   }
-  sel.value = row.person;
+  sel.value = person;
 
   const amtEl = document.getElementById('inc-amt');
-  amtEl.value = Math.round(row.out);
+  amtEl.value = Math.round(amount);
   document.getElementById('inc-note').value = '';
   resetChangeCalc();
 
   window.scrollTo({ top: 0, behavior: 'smooth' });
   amtEl.focus();
   amtEl.select();
+}
+
+function collectFrom(index) {
+  const row = debtRows[index];
+  if (!row || row.free || row.bal >= 0) return;
+  startCollect(row.person, -row.bal);
+}
+
+function openPerson(index) {
+  const row = debtRows[index];
+  if (!row) return;
+  personView = row.person;
+  personOpenMonths = null;    // 重設，讓最新月份自動展開
+  personOthersOpen = false;
+  tab('person');
+  personView = row.person;    // tab() 會清掉，這裡補回來
+  renderPersonDetail();
+  window.scrollTo({ top: 0 });
+}
+
+// 拆出某個人的所有相關記錄：account = 影響帳戶結餘，others = 有關但不影響結餘
+function personEntries(person) {
+  const free = NO_DEBT_PERSONS.includes(person);
+  const account = [];
+  const others = [];
+  let absorbed = 0;
+
+  transactions.forEach(tx => {
+    const amt = Number(tx.amount || 0);
+
+    if (tx.category === 'lunch') {
+      const details = tx.lunchDetails || [];
+      const share = details
+        .filter(d => d.person === person)
+        .reduce((sum, d) => sum + Number(d.amount || 0), 0);
+      if (share <= 0) return;
+      const sub = `整筆 $${Math.round(amt).toLocaleString()}・${details.length}人分`;
+      if (free) {
+        absorbed += share;
+        others.push({ date: tx.date, label: CAT_LABEL.lunch, sub, note: tx.note || '',
+                      text: `公司吸收 $${Math.round(share).toLocaleString()}`, tone: 'muted' });
+      } else {
+        account.push({ date: tx.date, label: CAT_LABEL.lunch, sub, note: tx.note || '', delta: -share });
+      }
+      return;
+    }
+
+    if (tx.person !== person) return;
+    const label = CAT_LABEL[tx.category] || tx.category;
+    const base = { date: tx.date, label, sub: '', note: tx.note || '' };
+
+    if (tx.category === 'lunch_return') {
+      if (free) others.push({ ...base, text: `已繳 $${Math.round(amt).toLocaleString()}`, tone: 'muted' });
+      else account.push({ ...base, delta: amt });
+    } else if (tx.category === 'deposit' || tx.category === 'reimbursement_offset') {
+      account.push({ ...base, delta: amt });
+    } else if (tx.category === 'deposit_refund' || tx.category === 'staff_buy_deduct') {
+      account.push({ ...base, delta: -amt });
+    } else {
+      const inc = tx.type === 'income';
+      others.push({ ...base, sub: '不影響帳戶結餘',
+                    text: `${inc ? '+' : '−'}$${Math.round(amt).toLocaleString()}`, tone: 'muted' });
+    }
+  });
+
+  // 明細一律照日期新→舊排（transactions 是按建立時間排的，補登的會亂序）
+  const byDate = (a, b) => String(b.date).localeCompare(String(a.date));
+  account.sort(byDate);
+  others.sort(byDate);
+
+  return { account, others, absorbed, free };
+}
+
+function groupByMonth(rows) {
+  const map = new Map();
+  rows.forEach(r => {
+    const key = (r.date || '').slice(0, 7) || '未知';
+    if (!map.has(key)) map.set(key, []);
+    map.get(key).push(r);
+  });
+  return [...map.entries()].sort((a, b) => b[0].localeCompare(a[0]));
+}
+
+function monthTitle(key) {
+  const m = /^(\d{4})-(\d{2})$/.exec(key);
+  return m ? `${m[1]}年${Number(m[2])}月` : key;
+}
+
+function shortDate(date) {
+  const str = String(date || '');
+  return str.length >= 10 ? str.slice(5).replace('-', '/') : str;
+}
+
+function togglePersonMonth(key) {
+  if (!personOpenMonths) personOpenMonths = new Set();
+  if (personOpenMonths.has(key)) personOpenMonths.delete(key);
+  else personOpenMonths.add(key);
+  renderPersonDetail();
+}
+
+function togglePersonOthers() {
+  personOthersOpen = !personOthersOpen;
+  renderPersonDetail();
+}
+
+function renderPersonDetail() {
+  const el = document.getElementById('person-detail');
+  if (!el || !personView) return;
+
+  const person = personView;
+  const { account, others, absorbed, free } = personEntries(person);
+  const spent = account.reduce((s, r) => s + (r.delta < 0 ? -r.delta : 0), 0);
+  const funded = account.reduce((s, r) => s + (r.delta > 0 ? r.delta : 0), 0);
+  const bal = funded - spent;
+
+  const months = groupByMonth(account);
+  if (!personOpenMonths) {
+    personOpenMonths = new Set(months.length ? [months[0][0]] : []);
+  }
+
+  // ── 標題卡 ──
+  let stateHtml, metaHtml, collectBtn = '';
+  if (free) {
+    stateHtml = `<div class="pd-state" style="font-size:20px;"><span class="free-tag">午餐免付</span></div>`;
+    metaHtml = `公司吸收午餐 $${Math.round(absorbed).toLocaleString()}`;
+  } else {
+    const cls = bal < 0 ? 'c-red' : (bal > 0 ? 'c-blue' : '');
+    stateHtml = `<div class="pd-state ${cls}">${balanceText(bal)}</div>`;
+    metaHtml = `消費 $${Math.round(spent).toLocaleString()} ／ 投入 $${Math.round(funded).toLocaleString()}`;
+    if (bal < 0) {
+      collectBtn = `<button class="debt-collect" onclick="startCollect('${escapeHtml(person).replace(/'/g, "\\'")}', ${Math.round(-bal)})">收款</button>`;
+    }
+  }
+
+  let html = `<div class="card">
+    <div class="pd-head">
+      <div>
+        <div class="pd-name">${escapeHtml(person)}</div>
+        <div class="pd-meta">${metaHtml}</div>
+      </div>
+      <div class="debt-right">${stateHtml}${collectBtn}</div>
+    </div>
+  </div>`;
+
+  // ── 帳戶明細（按月分組）──
+  if (account.length === 0) {
+    personOthersOpen = true;   // 沒有帳戶明細時，直接展開其他相關記錄
+    if (!free) html += '<div class="card"><div class="empty">沒有影響帳戶的記錄</div></div>';
+  } else {
+    html += '<div class="card"><div class="card-title">帳戶明細</div>';
+    months.forEach(([key, rows]) => {
+      const open = personOpenMonths.has(key);
+      const mSpent = rows.reduce((s, r) => s + (r.delta < 0 ? -r.delta : 0), 0);
+      const mFunded = rows.reduce((s, r) => s + (r.delta > 0 ? r.delta : 0), 0);
+      html += `<div class="month-head" onclick="togglePersonMonth('${key}')">
+        <span class="month-name">${monthTitle(key)}<span class="chev">${open ? '▾' : '▸'}</span></span>
+        <span class="month-sum">消費 $${Math.round(mSpent).toLocaleString()} ／ 投入 $${Math.round(mFunded).toLocaleString()}</span>
+      </div>`;
+      if (!open) return;
+      html += rows.map(r => {
+        const pos = r.delta > 0;
+        const detail = [r.sub, r.note].filter(Boolean).join(' ｜ ');
+        return `<div class="pd-row">
+          <div>
+            <div class="pd-label">${r.label}<span class="pd-date">${shortDate(r.date)}</span></div>
+            ${detail ? `<div class="pd-sub">${escapeHtml(detail)}</div>` : ''}
+          </div>
+          <div class="pd-amt ${pos ? 'pos' : 'neg'}">${pos ? '+' : '−'}$${Math.round(Math.abs(r.delta)).toLocaleString()}</div>
+        </div>`;
+      }).join('');
+    });
+
+    html += `<div class="pd-total">
+      <div class="pd-total-line"><span>消費合計</span><b>$${Math.round(spent).toLocaleString()}</b></div>
+      <div class="pd-total-line"><span>投入合計</span><b>$${Math.round(funded).toLocaleString()}</b></div>
+      <div class="pd-total-line final"><span>結餘</span><b class="${bal < 0 ? 'c-red' : (bal > 0 ? 'c-blue' : '')}">${balanceText(bal)}</b></div>
+    </div></div>`;
+  }
+
+  // ── 其他相關記錄 ──
+  if (others.length > 0) {
+    html += `<div class="card">
+      <div class="month-head" style="padding-top:0;border-bottom:${personOthersOpen ? '1px solid var(--line)' : 'none'};" onclick="togglePersonOthers()">
+        <span class="month-name">其他相關記錄<span class="chev">${personOthersOpen ? '▾' : '▸'}</span></span>
+        <span class="month-sum">${others.length} 筆・不影響結餘</span>
+      </div>`;
+    if (personOthersOpen) {
+      html += others.map(r => {
+        const detail = [r.sub, r.note].filter(Boolean).join(' ｜ ');
+        return `<div class="pd-row">
+          <div>
+            <div class="pd-label">${r.label}<span class="pd-date">${shortDate(r.date)}</span></div>
+            ${detail ? `<div class="pd-sub">${escapeHtml(detail)}</div>` : ''}
+          </div>
+          <div class="pd-amt muted">${r.text}</div>
+        </div>`;
+      }).join('');
+    }
+    html += '</div>';
+  }
+
+  el.innerHTML = html;
 }
 
 function renderHistory() {
@@ -1174,6 +1641,7 @@ function renderHistory() {
   else if (histFilter === 'income') list = transactions.filter(t => t.type === 'income');
   else if (histFilter === 'lunch') list = transactions.filter(t => t.category === 'lunch');
   else if (histFilter === 'lunch_return') list = transactions.filter(t => t.category === 'lunch_return');
+  else if (histFilter === 'account') list = transactions.filter(t => ACCOUNT_CATEGORIES.includes(t.category));
 
   el.innerHTML = list.length === 0
     ? '<div class="empty"><div class="empty-icon">📋</div>沒有符合的記錄</div>'
@@ -1182,8 +1650,9 @@ function renderHistory() {
 
 function txRow(tx, showDel) {
   const isExp = tx.type === 'expense';
-  const sign = isExp ? '-' : '+';
-  const color = isExp ? '#e53e3e' : '#38a169';
+  const cashless = isCashless(tx);
+  const sign = cashless ? '' : (isExp ? '-' : '+');
+  const color = cashless ? 'var(--sub)' : (isExp ? 'var(--red)' : 'var(--green)');
   const badge = isExp ? 'badge-exp' : 'badge-inc';
   const label = CAT_LABEL[tx.category] || tx.category;
 
@@ -1201,6 +1670,7 @@ function txRow(tx, showDel) {
       <div style="display:flex;align-items:center;flex-wrap:wrap;gap:4px;">
         <span class="tx-badge ${badge}">${label}</span>
         <span class="tx-date">${tx.date}</span>
+        ${cashless ? '<span class="cashless-tag">不影響現金</span>' : ''}
       </div>
       ${detail ? `<div class="tx-detail">${detail}</div>` : ''}
       ${syncStatus === 'synced' ? '' : `<div class="tx-sync"><span class="tx-sync-pill ${syncStatus}">尚未同步</span></div>`}
