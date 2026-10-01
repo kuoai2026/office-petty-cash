@@ -222,6 +222,15 @@
   .mode-toggle{display:flex;gap:6px;background:#f5f6f8;padding:4px;border-radius:12px;}
   .mode-toggle .type-btn{font-size:13.5px;padding:9px 6px;border-radius:9px;}
 
+  /* ── 午餐代付 ── */
+  .payer-toggle{width:100%;padding:11px;border:1px dashed var(--line-strong);border-radius:12px;background:transparent;
+    color:var(--sub);font-size:13.5px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s;}
+  .payer-toggle:hover{border-color:var(--muted);color:var(--text);}
+  .payer-toggle.on{border-style:solid;border-color:var(--blue);background:var(--blue-soft);color:var(--blue);}
+  .payer-box{margin-top:10px;padding:14px;border-radius:14px;background:#f8f9fa;}
+  .payer-box label{margin-bottom:8px;}
+  .payer-note{font-size:12px;color:var(--muted);line-height:1.6;margin-top:8px;}
+
   /* ── 新版本提示 ── */
   .update-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;
     padding:11px 16px;background:var(--blue);color:#fff;font-size:13.5px;font-weight:600;}
@@ -358,6 +367,20 @@
           <div class="form-group">
             <label>本餐總金額（零用金代墊總計）</label>
             <input type="number" id="lunch-grand-total" placeholder="請先輸入本餐總金額" min="0" oninput="calcLunchTotal()">
+          </div>
+
+          <div class="form-group">
+            <button type="button" class="payer-toggle" id="lunch-payer-toggle" onclick="toggleLunchPayer()">＋ 這餐由同仁先代付</button>
+            <div class="payer-box hidden" id="sec-lunch-payer">
+              <label>代付人</label>
+              <select id="lunch-payer" onchange="updateLunchPayerHint()"></select>
+              <div class="balance-bar idle" id="lunch-payer-hint">
+                <span class="bal-label" id="lunch-payer-label">請先填本餐總金額</span>
+                <span class="bal-diff idle" id="lunch-payer-diff">待填寫</span>
+              </div>
+              <div class="payer-note">他先自己付錢，零用金<strong>不會</strong>動到現金，整筆金額會記進他的帳戶（等於同時請款轉成儲值）。<br>
+              如果當場就把現金拿給他，請<strong>不要</strong>開這個開關，直接用一般的午餐代墊就好。</div>
+            </div>
           </div>
           <div class="form-group">
             <div class="person-label-row">
@@ -576,7 +599,7 @@
 </div>
 
 <script>
-const APP_VERSION = '2026.08.31.1';   // 每次改版都要 +1，新版偵測靠這個字串比對
+const APP_VERSION = '2026.10.01.1';   // 每次改版都要 +1，新版偵測靠這個字串比對
 const UPDATE_CHECK_INTERVAL = 10 * 60 * 1000;
 
 const DEFAULT_PERSONS = ['琪琪','嘟姐','Wendy','姿閔','羿寧','奕妏','怡臻','老闆','阿姨','業代','麗如','明宏','其他'];
@@ -634,6 +657,7 @@ let debtRows = [];
 let personView = null;        // 目前正在看誰的明細
 let personOpenMonths = null;  // 明細頁展開的月份；null = 尚未初始化（預設展開最新月）
 let personOthersOpen = false;
+let lunchPayerOpen = false;   // 午餐由同仁代付
 let reimbMode = 'cash';       // cash = 給現金請款 / offset = 折抵轉成儲值
 let staffBuyMode = 'cash';    // cash = 付現金 / deduct = 扣儲值
 let modalCb = null;
@@ -856,6 +880,44 @@ function onIncCat() {
   updateAccountHint();
 }
 
+function toggleLunchPayer() {
+  lunchPayerOpen = !lunchPayerOpen;
+  document.getElementById('sec-lunch-payer').classList.toggle('hidden', !lunchPayerOpen);
+  const btn = document.getElementById('lunch-payer-toggle');
+  btn.textContent = lunchPayerOpen ? '✕ 取消代付（改成零用金直接付）' : '＋ 這餐由同仁先代付';
+  btn.classList.toggle('on', lunchPayerOpen);
+  updateLunchPayerHint();
+}
+
+function updateLunchPayerHint() {
+  const bar = document.getElementById('lunch-payer-hint');
+  if (!bar || !lunchPayerOpen) return;
+  const label = document.getElementById('lunch-payer-label');
+  const diffEl = document.getElementById('lunch-payer-diff');
+  const payer = document.getElementById('lunch-payer').value;
+  const grand = parseFloat(document.getElementById('lunch-grand-total').value) || 0;
+
+  let share = 0;
+  document.querySelectorAll('.li').forEach(i => {
+    if (i.dataset.p === payer) share += parseFloat(i.value) || 0;
+  });
+
+  if (!payer || grand <= 0) {
+    bar.className = 'balance-bar idle';
+    diffEl.className = 'bal-diff idle';
+    label.textContent = '請先填本餐總金額';
+    diffEl.textContent = '待填寫';
+    return;
+  }
+  bar.className = 'balance-bar info';
+  diffEl.className = 'bal-diff info';
+  label.textContent = `${payer} 代付 $${Math.round(grand).toLocaleString()}`;
+  const net = grand - share;
+  diffEl.textContent = share > 0
+    ? `他帳上淨 +$${Math.round(net).toLocaleString()}`
+    : `他帳上 +$${Math.round(grand).toLocaleString()}`;
+}
+
 function setReimbMode(mode) {
   reimbMode = mode;
   document.getElementById('btn-reimb-cash').className = 'type-btn' + (mode === 'cash' ? ' sel-exp' : '');
@@ -939,7 +1001,7 @@ function buildPersonGrid() {
 }
 
 function buildPersonSelect() {
-  ['inc-person', 'exp-person'].forEach(id => {
+  ['inc-person', 'exp-person', 'lunch-payer'].forEach(id => {
     const sel = document.getElementById(id);
     if (!sel) return;
     const prev = sel.value;
@@ -1103,6 +1165,7 @@ function calcLunchTotal() {
     diffEl.className = 'bal-diff ng';
     diffEl.textContent = `超出 $${Math.round(-diff).toLocaleString()}`;
   }
+  updateLunchPayerHint();
 }
 
 // 收入找零計算：對方給的現金 - 應收金額 = 要找回去多少，只做提示不會存進記錄
@@ -1181,6 +1244,13 @@ function collectTransactionFromForm() {
       }
       tx.lunchDetails = details;
       tx.amount = grand;
+
+      // 同仁代付：零用金不動現金，整筆記進代付人帳戶
+      if (lunchPayerOpen) {
+        const payer = document.getElementById('lunch-payer').value;
+        if (!payer) throw new Error('請選擇代付人');
+        tx.person = payer;
+      }
     } else {
       const amt = parseFloat(document.getElementById('other-exp-amt').value);
       if (!amt || amt <= 0) throw new Error('請填入有效金額');
@@ -1259,6 +1329,7 @@ function resetForm() {
   document.getElementById('f-date').value = today();
   setReimbMode('cash');
   setStaffBuyMode('cash');
+  if (lunchPayerOpen) toggleLunchPayer();
   onExpCat();
   onIncCat();
 }
@@ -1272,6 +1343,8 @@ function sortTransactions() {
 }
 
 function isCashless(tx) {
+  // 午餐若有代付人，錢是他自己出的，零用金現金不動
+  if (tx.category === 'lunch') return !!tx.person;
   return CASHLESS_CATEGORIES.includes(tx.category);
 }
 
@@ -1302,6 +1375,8 @@ function calcPersonAccounts() {
         }
         acc[ld.person].spent += Number(ld.amount || 0);
       });
+      // 代付人先墊了整筆，記進他的帳戶
+      if (tx.person && acc[tx.person]) acc[tx.person].funded += amt;
       return;
     }
 
@@ -1486,6 +1561,11 @@ function personEntries(person) {
 
     if (tx.category === 'lunch') {
       const details = tx.lunchDetails || [];
+      // 他是這餐的代付人：整筆記進他帳上
+      if (tx.person === person) {
+        account.push({ date: tx.date, label: '🍱 午餐代付', note: tx.note || '', delta: amt,
+                       sub: `先代墊整筆 $${Math.round(amt).toLocaleString()}・${details.length}人分` });
+      }
       const share = details
         .filter(d => d.person === person)
         .reduce((sum, d) => sum + Number(d.amount || 0), 0);
@@ -1681,8 +1761,11 @@ function txRow(tx, showDel) {
   const label = CAT_LABEL[tx.category] || tx.category;
 
   let detail = '';
+  if (tx.category === 'lunch' && tx.person) {
+    detail = `<b>${escapeHtml(tx.person)} 代付</b> &nbsp;·&nbsp; `;
+  }
   if (tx.category === 'lunch' && tx.lunchDetails) {
-    detail = tx.lunchDetails.map(d => `<span>${escapeHtml(d.person)} $${Math.round(d.amount)}</span>`).join(' &nbsp;·&nbsp; ');
+    detail += tx.lunchDetails.map(d => `<span>${escapeHtml(d.person)} $${Math.round(d.amount)}</span>`).join(' &nbsp;·&nbsp; ');
   } else if (tx.person) {
     detail = escapeHtml(tx.person);
   }
