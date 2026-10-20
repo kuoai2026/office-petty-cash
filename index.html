@@ -39,7 +39,7 @@
   .nav{display:flex;gap:4px;overflow-x:auto;max-width:620px;margin:0 auto;padding:0 14px 10px;scrollbar-width:none;}
   .nav::-webkit-scrollbar{display:none;}
   .nav-btn{flex:1;padding:8px 4px;border:none;background:none;cursor:pointer;font-size:13.5px;
-    color:var(--muted);white-space:nowrap;border-radius:10px;font-weight:600;transition:color .15s,background .15s;min-width:56px;}
+    color:var(--muted);white-space:nowrap;border-radius:10px;font-weight:600;transition:color .15s,background .15s;min-width:48px;}
   .nav-btn:hover{color:var(--sub);}
   .nav-btn.active{color:var(--text);background:#f2f3f5;font-weight:700;}
 
@@ -222,6 +222,21 @@
   .mode-toggle{display:flex;gap:6px;background:#f5f6f8;padding:4px;border-radius:12px;}
   .mode-toggle .type-btn{font-size:13.5px;padding:9px 6px;border-radius:9px;}
 
+  /* ── 盤點 ── */
+  .lock-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;
+    padding:11px 16px;background:var(--red);color:#fff;font-size:13.5px;font-weight:600;}
+  .st-row{display:flex;justify-content:space-between;align-items:baseline;font-size:13.5px;
+    color:var(--sub);padding:7px 0;font-variant-numeric:tabular-nums;}
+  .st-row b{color:var(--text);font-weight:700;font-size:15px;}
+  .st-hist{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;
+    padding:14px 0;border-bottom:1px solid var(--line);}
+  .st-hist:last-child{border-bottom:none;}
+  .st-hist-date{font-size:13.5px;font-weight:700;font-variant-numeric:tabular-nums;}
+  .st-hist-sub{font-size:12px;color:var(--muted);margin-top:4px;font-variant-numeric:tabular-nums;}
+  .st-hist-diff{font-size:15px;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap;}
+  .lock-note{background:var(--red-soft);border-radius:14px;padding:16px;margin-bottom:14px;
+    font-size:13.5px;color:var(--red);font-weight:600;line-height:1.6;}
+
   /* ── 午餐代付 ── */
   .payer-toggle{width:100%;padding:11px;border:1px dashed var(--line-strong);border-radius:12px;background:transparent;
     color:var(--sub);font-size:13.5px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s;}
@@ -285,6 +300,11 @@
     </span>
   </div>
 
+  <div class="lock-bar hidden" id="lock-bar">
+    <span id="lock-msg">本週尚未盤點，無法新增記錄</span>
+    <button class="update-btn primary" onclick="tab('stocktake')">前往盤點</button>
+  </div>
+
   <header class="header">
     <div class="header-title">辦公室零用金</div>
     <div class="balance-pill" id="hBalance">餘額 $1,000</div>
@@ -295,6 +315,7 @@
     <button class="nav-btn" onclick="tab('add')">新增</button>
     <button class="nav-btn" onclick="tab('debt')">帳戶</button>
     <button class="nav-btn" onclick="tab('history')">記錄</button>
+    <button class="nav-btn" onclick="tab('stocktake')">盤點</button>
     <button class="nav-btn" onclick="tab('settings')">設定</button>
   </nav>
 </div>
@@ -492,7 +513,8 @@
         </div>
       </div>
 
-      <button class="btn btn-primary" onclick="submit()">新增記錄</button>
+      <div class="lock-note hidden" id="add-lock-note"></div>
+      <button class="btn btn-primary" id="submit-btn" onclick="submit()">新增記錄</button>
     </div>
   </div>
 
@@ -576,6 +598,41 @@
     </div>
   </div>
 
+  <!-- ═══ 盤點 ═══ -->
+  <div id="tab-stocktake" class="hidden">
+    <div class="card">
+      <div class="card-title">現金盤點</div>
+      <div class="st-row"><span>系統帳面現金</span><b id="st-book">$0</b></div>
+      <div class="st-row"><span>上次盤點</span><b id="st-last">－</b></div>
+      <div class="st-row"><span>本週應盤日（每週三）</span><b id="st-due">－</b></div>
+
+      <hr class="divider">
+
+      <div class="form-group">
+        <label>實際點到的現金</label>
+        <input type="number" id="st-actual" placeholder="請把盒子裡的錢數一數" min="0" oninput="calcStocktake()">
+        <div class="balance-bar idle" id="st-bar">
+          <span class="bal-label" id="st-label">帳面 $0 ／ 實際 $0</span>
+          <span class="bal-diff idle" id="st-diff">待填寫</span>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>盤點人</label>
+        <select id="st-person"></select>
+      </div>
+      <div class="form-group">
+        <label>備註（選填）</label>
+        <input type="text" id="st-note" placeholder="例如：差額已查到原因…">
+      </div>
+      <div id="st-actions"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">盤點記錄</div>
+      <div id="st-history"></div>
+    </div>
+  </div>
+
   <!-- ═══ 個人明細 ═══ -->
   <div id="tab-person" class="hidden">
     <button class="back-btn" onclick="tab('debt')">← 返回帳戶</button>
@@ -599,7 +656,7 @@
 </div>
 
 <script>
-const APP_VERSION = '2026.10.01.1';   // 每次改版都要 +1，新版偵測靠這個字串比對
+const APP_VERSION = '2026.10.20.1';   // 每次改版都要 +1，新版偵測靠這個字串比對
 const UPDATE_CHECK_INTERVAL = 10 * 60 * 1000;
 
 const DEFAULT_PERSONS = ['琪琪','嘟姐','Wendy','姿閔','羿寧','奕妏','怡臻','老闆','阿姨','業代','麗如','明宏','其他'];
@@ -617,11 +674,14 @@ const PERSON_NAME_ALIASES = {
 const NO_DEBT_PERSONS = ['阿姨', '老闆'];
 
 // 不影響零用金現金、只動個人帳戶的類別
-const CASHLESS_CATEGORIES = ['staff_buy_deduct', 'reimbursement_offset'];
+const CASHLESS_CATEGORIES = ['staff_buy_deduct', 'reimbursement_offset', 'stocktake'];
 // 個人帳戶相關類別（記錄頁「儲值」篩選用）
 const ACCOUNT_CATEGORIES = ['deposit', 'deposit_refund', 'staff_buy_deduct', 'reimbursement_offset'];
 // 需要選擇人員的支出類別
 const EXPENSE_PERSON_CATS = ['reimbursement', 'deposit_refund'];
+// 盤點相關類別（不計入任何人的個人帳戶）
+const STOCKTAKE_CATEGORIES = ['stocktake', 'stocktake_adjust'];
+const STOCKTAKE_WEEKDAY = 3;   // 每週三盤點（0=日 1=一 … 3=三）
 
 const CAT_LABEL = {
   lunch: '🍱 午餐代墊',
@@ -636,6 +696,8 @@ const CAT_LABEL = {
   sales_buy: '💼 業代購買',
   staff_buy: '👤 同仁購買',
   staff_buy_deduct: '👤 同仁購買（扣儲值）',
+  stocktake: '🧮 現金盤點',
+  stocktake_adjust: '⚖️ 盤點調整',
   pharmacist_income: '💊 郭藥師入帳',
   other_inc: '📋 其他收入'
 };
@@ -829,6 +891,8 @@ function persistLocalCache() {
 }
 
 function renderAll() {
+  renderLockState();
+  renderStocktake();
   renderOverview();
   renderDebt();
   renderPersonDetail();
@@ -837,7 +901,7 @@ function renderAll() {
   updateHeader();
 }
 
-const TABS = ['overview', 'add', 'debt', 'history', 'settings'];
+const TABS = ['overview', 'add', 'debt', 'history', 'stocktake', 'settings'];
 const SCREENS = TABS.concat(['person']);
 
 function tab(t) {
@@ -851,6 +915,7 @@ function tab(t) {
     b.classList.toggle('active', TABS[i] === navTarget);
   });
   if (t === 'debt') renderDebt();
+  if (t === 'stocktake') renderStocktake();
   if (t === 'history') renderHistory();
   if (t === 'overview') renderOverview();
   if (t === 'settings') renderSyncSummary();
@@ -1001,7 +1066,7 @@ function buildPersonGrid() {
 }
 
 function buildPersonSelect() {
-  ['inc-person', 'exp-person', 'lunch-payer'].forEach(id => {
+  ['inc-person', 'exp-person', 'lunch-payer', 'st-person'].forEach(id => {
     const sel = document.getElementById(id);
     if (!sel) return;
     const prev = sel.value;
@@ -1291,6 +1356,11 @@ function collectTransactionFromForm() {
 
 async function submit() {
   try {
+    if (isStocktakeDue()) {
+      alert(`本週（${dueStocktakeDate()} 起）尚未完成現金盤點，請先到「盤點」頁完成對帳才能新增記錄。`);
+      tab('stocktake');
+      return;
+    }
     if (!shouldUseCloudMode()) {
       alert('請先在設定頁啟用 Google Sheet 共用同步，並確認 Web App URL 正確。');
       return;
@@ -1581,6 +1651,7 @@ function personEntries(person) {
       return;
     }
 
+    if (STOCKTAKE_CATEGORIES.includes(tx.category)) return;   // 盤點不屬於任何人的帳
     if (tx.person !== person) return;
     const label = CAT_LABEL[tx.category] || tx.category;
     const base = { date: tx.date, label, sub: '', note: tx.note || '' };
@@ -2049,6 +2120,189 @@ function startUpdateWatch() {
     if (!document.hidden) checkForUpdate();
   });
   window.addEventListener('focus', checkForUpdate);
+}
+
+// ── 每週現金盤點 ──────────────────────────────────────────
+function stocktakeRecords() {
+  return transactions.filter(t => t.category === 'stocktake')
+    .slice().sort((a, b) => b.date.localeCompare(a.date));
+}
+
+function lastStocktake() {
+  const list = stocktakeRecords();
+  return list.length ? list[0] : null;
+}
+
+// 最近一個「已經到了」的週三
+function dueStocktakeDate() {
+  const d = new Date();
+  const back = (d.getDay() - STOCKTAKE_WEEKDAY + 7) % 7;
+  d.setDate(d.getDate() - back);
+  return d.toLocaleDateString('sv-SE');
+}
+
+// 本週還沒盤點就鎖住新增
+function isStocktakeDue() {
+  const last = lastStocktake();
+  return !last || last.date < dueStocktakeDate();
+}
+
+function stocktakeDiffOf(tx) {
+  const m = /差額\s*([+-]?\d+)/.exec(tx.note || '');
+  return m ? Number(m[1]) : null;
+}
+
+function renderLockState() {
+  const due = isStocktakeDue();
+  const bar = document.getElementById('lock-bar');
+  if (bar) bar.classList.toggle('hidden', !due);
+
+  const btn = document.getElementById('submit-btn');
+  if (btn) {
+    btn.disabled = due;
+    btn.style.opacity = due ? '.5' : '';
+    btn.style.cursor = due ? 'not-allowed' : '';
+    btn.textContent = due ? '本週尚未盤點，無法新增' : '新增記錄';
+  }
+  const note = document.getElementById('add-lock-note');
+  if (note) {
+    note.classList.toggle('hidden', !due);
+    note.textContent = `本週（${dueStocktakeDate()} 起）尚未完成現金盤點。請先到「盤點」頁對帳，完成後就能繼續記帳。`;
+  }
+}
+
+function calcStocktake() {
+  const book = calcBalance();
+  const raw = document.getElementById('st-actual').value;
+  const actual = parseFloat(raw) || 0;
+  const bar = document.getElementById('st-bar');
+  const label = document.getElementById('st-label');
+  const diffEl = document.getElementById('st-diff');
+
+  label.textContent = `帳面 $${Math.round(book).toLocaleString()} ／ 實際 $${Math.round(actual).toLocaleString()}`;
+  const diff = Math.round(actual - book);
+
+  if (raw === '') {
+    bar.className = 'balance-bar idle';
+    diffEl.className = 'bal-diff idle';
+    diffEl.textContent = '待填寫';
+  } else if (diff === 0) {
+    bar.className = 'balance-bar ok';
+    diffEl.className = 'bal-diff ok';
+    diffEl.textContent = '✓ 帳實相符';
+  } else {
+    bar.className = 'balance-bar ng';
+    diffEl.className = 'bal-diff ng';
+    diffEl.textContent = diff > 0
+      ? `現金多 $${diff.toLocaleString()}`
+      : `現金短少 $${Math.abs(diff).toLocaleString()}`;
+  }
+  renderStocktakeActions(raw === '' ? null : diff);
+}
+
+function renderStocktakeActions(diff) {
+  const el = document.getElementById('st-actions');
+  if (!el) return;
+  if (diff === null) {
+    el.innerHTML = '<button class="btn btn-primary" disabled style="opacity:.5;cursor:not-allowed;">請先輸入實際點到的現金</button>';
+    return;
+  }
+  if (diff === 0) {
+    el.innerHTML = '<button class="btn btn-primary" onclick="doStocktake(false)">確認帳實相符，完成盤點</button>';
+    return;
+  }
+  el.innerHTML =
+    `<button class="btn btn-primary" onclick="doStocktake(true)">以實際現金為準（產生調整 ${diff > 0 ? '+' : '−'}$${Math.abs(diff).toLocaleString()}）</button>` +
+    '<button class="btn btn-outline" style="width:100%;margin-top:8px;padding:14px;" onclick="doStocktake(false)">先不調整，只記錄這次盤點</button>';
+}
+
+async function doStocktake(adjust) {
+  try {
+    if (!shouldUseCloudMode()) {
+      alert('請先在設定頁啟用 Google Sheet 共用同步。');
+      return;
+    }
+    const raw = document.getElementById('st-actual').value;
+    const actual = parseFloat(raw);
+    if (raw === '' || isNaN(actual) || actual < 0) throw new Error('請輸入實際點到的現金');
+
+    const person = document.getElementById('st-person').value;
+    if (!person) throw new Error('請選擇盤點人');
+
+    const book = calcBalance();
+    const diff = Math.round(actual - book);
+    const memo = document.getElementById('st-note').value.trim();
+    const nowIso = new Date().toISOString();
+
+    const record = {
+      id: createTxId(), date: today(), type: 'expense', category: 'stocktake',
+      amount: Math.round(actual), person, lunchDetails: [],
+      note: `帳面 $${Math.round(book)}｜差額 ${diff >= 0 ? '+' : ''}${diff}${memo ? '｜' + memo : ''}`,
+      createdAt: nowIso, syncStatus: 'synced', syncError: '', syncedAt: nowIso
+    };
+    await callSheetApi('upsertTransaction', record);
+    transactions.unshift(record);
+
+    if (adjust && diff !== 0) {
+      const adjustment = {
+        id: createTxId(), date: today(),
+        type: diff > 0 ? 'income' : 'expense', category: 'stocktake_adjust',
+        amount: Math.abs(diff), person: '', lunchDetails: [],
+        note: `盤點調整（${person}）`,
+        createdAt: nowIso, syncStatus: 'synced', syncError: '', syncedAt: nowIso
+      };
+      await callSheetApi('upsertTransaction', adjustment);
+      transactions.unshift(adjustment);
+    }
+
+    sortTransactions();
+    persistLocalCache();
+    document.getElementById('st-actual').value = '';
+    document.getElementById('st-note').value = '';
+    renderAll();
+    await syncFromCloud({ silent: true });
+
+    alert(adjust && diff !== 0
+      ? `✅ 盤點完成，已產生調整記錄 ${diff > 0 ? '+' : '−'}$${Math.abs(diff).toLocaleString()}，帳面已與實際現金一致。`
+      : '✅ 盤點完成，已解鎖記帳功能。');
+  } catch (err) {
+    alert(err.message || String(err));
+  }
+}
+
+function renderStocktake() {
+  const bookEl = document.getElementById('st-book');
+  if (!bookEl) return;
+
+  bookEl.textContent = '$' + Math.round(calcBalance()).toLocaleString();
+  const last = lastStocktake();
+  document.getElementById('st-last').textContent = last
+    ? `${last.date}（${last.person || '－'}）`
+    : '從未盤點';
+  const due = dueStocktakeDate();
+  document.getElementById('st-due').textContent = isStocktakeDue()
+    ? `${due}　尚未完成`
+    : `${due}　已完成`;
+
+  calcStocktake();
+
+  const list = stocktakeRecords();
+  const histEl = document.getElementById('st-history');
+  histEl.innerHTML = list.length === 0
+    ? '<div class="empty">還沒有盤點記錄</div>'
+    : list.map(t => {
+        const diff = stocktakeDiffOf(t);
+        const cls = diff === 0 ? 'c-green' : 'c-red';
+        const text = diff === null ? '－'
+          : (diff === 0 ? '相符' : (diff > 0 ? `多 $${diff.toLocaleString()}` : `少 $${Math.abs(diff).toLocaleString()}`));
+        return `<div class="st-hist">
+          <div>
+            <div class="st-hist-date">${t.date}　<span style="font-weight:600;color:var(--sub);">${escapeHtml(t.person || '－')}</span></div>
+            <div class="st-hist-sub">實際 $${Math.round(t.amount).toLocaleString()}　${escapeHtml((t.note || '').replace(/｜差額[^｜]*/, ''))}</div>
+          </div>
+          <div class="st-hist-diff ${cls}">${text}</div>
+        </div>`;
+      }).join('');
 }
 
 function showModal(title, msg, cb) {
