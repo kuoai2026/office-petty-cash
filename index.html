@@ -656,14 +656,16 @@
 </div>
 
 <script>
-const APP_VERSION = '2026.10.20.1';   // 每次改版都要 +1，新版偵測靠這個字串比對
+const APP_VERSION = '2026.11.06.1';   // 每次改版都要 +1，新版偵測靠這個字串比對
 const UPDATE_CHECK_INTERVAL = 10 * 60 * 1000;
 
-const DEFAULT_PERSONS = ['琪琪','嘟姐','Wendy','姿閔','羿寧','奕妏','怡臻','老闆','阿姨','業代','麗如','明宏','其他'];
+const DEFAULT_PERSONS = ['琪琪','嘟姐','Wendy','姿閔','羿寧','奕妏','怡臻','老闆','阿姨','業代','麗如','明宏','雅婷','其他'];
 const PERSON_STORAGE_KEY = 'pf_persons';
 const PERSON_VERSION_KEY = 'pf_persons_version';
-const PERSON_LIST_VERSION = 2;      // 之後還要強制補人員時，把這個數字 +1
-const REQUIRED_PERSONS = ['明宏'];  // 這一版要確保每台裝置都有的人員
+const PERSON_LIST_VERSION = 3;      // 之後還要強制補人員時，把這個數字 +1
+const REQUIRED_PERSONS = ['明宏', '雅婷'];  // 這一版要確保每台裝置都有的人員
+// 已離職／停用：不再出現在任何選單，但帳戶餘額與歷史明細完整保留
+const ARCHIVED_PERSONS = ['琪琪'];
 const PERSON_NAME_ALIASES = {
   '弈妏': '奕妏',
   '臨時人員': '麗如'
@@ -1052,11 +1054,16 @@ function personBalance(person) {
   return acc ? acc.funded - acc.spent : 0;
 }
 
+// 還在職、可以被選來記帳的人
+function activePersons() {
+  return persons.filter(p => !ARCHIVED_PERSONS.includes(p));
+}
+
 function buildPersonGrid() {
   const grid = document.getElementById('person-grid');
   grid.innerHTML = '';
   selectedPax = new Set([...selectedPax].filter(p => persons.includes(p)));
-  persons.forEach(p => {
+  activePersons().forEach(p => {
     const d = document.createElement('div');
     d.className = 'p-chip' + (selectedPax.has(p) ? ' sel' : '');
     d.textContent = p;
@@ -1071,12 +1078,13 @@ function buildPersonSelect() {
     if (!sel) return;
     const prev = sel.value;
     sel.innerHTML = '';
-    persons.forEach(p => {
+    const list = activePersons();
+    list.forEach(p => {
       const o = document.createElement('option');
       o.value = o.textContent = p;
       sel.appendChild(o);
     });
-    if (persons.includes(prev)) sel.value = prev;
+    if (list.includes(prev)) sel.value = prev;
   });
 }
 
@@ -1513,13 +1521,15 @@ function renderDebt() {
       const v = acc[p] || { spent: 0, funded: 0, absorbed: 0 };
       return {
         person: p, spent: v.spent, funded: v.funded, absorbed: v.absorbed,
-        bal: v.funded - v.spent, free: NO_DEBT_PERSONS.includes(p)
+        bal: v.funded - v.spent, free: NO_DEBT_PERSONS.includes(p),
+        archived: ARCHIVED_PERSONS.includes(p)
       };
     })
     .filter(e => e.spent !== 0 || e.funded !== 0 || e.absorbed !== 0)
     .sort((a, b) => {
-      if (a.free !== b.free) return a.free ? 1 : -1;   // 午餐免付的排最後
-      return a.bal - b.bal;                            // 欠最多的排最前
+      if (a.archived !== b.archived) return a.archived ? 1 : -1;  // 已封存的排最後
+      if (a.free !== b.free) return a.free ? 1 : -1;              // 午餐免付的次後
+      return a.bal - b.bal;                                       // 欠最多的排最前
     });
 
   const { owing, stored } = accountTotals();
@@ -1564,7 +1574,7 @@ function renderDebt() {
     }
     return `<div class="debt-card tappable ${cls}" onclick="openPerson(${i})">
       <div>
-        <div class="debt-person-name">${escapeHtml(e.person)}</div>
+        <div class="debt-person-name">${escapeHtml(e.person)}${e.archived ? ' <span class="free-tag">已封存</span>' : ''}</div>
         <div class="debt-sub">${sub}</div>
       </div>
       <div class="debt-right">${amtT}${btn}</div>
